@@ -30,6 +30,11 @@ const Wrapper = styled.div`
   min-height: 100vh;
 `;
 
+settings.availableNodes.push({
+  text: 'KILT Testnet (bootnode-alice.kilt-prototype.tk:9944)',
+  value: 'ws://bootnode-alice.kilt-prototype.tk:9944/'
+});
+
 class Apps extends React.Component<Props, State> {
   state: State;
 
