@@ -8,9 +8,9 @@ import { QueryTypes, StorageModuleQuery } from './types';
 
 import React from 'react';
 import { Compact } from '@polkadot/types';
-import { Button, Labelled } from '@polkadot/ui-app/index';
+import { Button, Labelled } from '@polkadot/ui-app';
 import valueToText from '@polkadot/ui-params/valueToText';
-import { withCallDiv } from '@polkadot/ui-api/index';
+import { withCallDiv } from '@polkadot/ui-api';
 import { isU8a, u8aToHex, u8aToString } from '@polkadot/util';
 
 import translate from './translate';
@@ -51,7 +51,11 @@ class Query extends React.PureComponent<Props, State> {
       const defaultProps = { className: 'ui--output' };
 
       // render function to create an element for the query results which is plugged to the api
-      const renderHelper = withCallDiv('subscribe', { params: [key, ...values] });
+      const renderHelper = withCallDiv('subscribe', {
+        paramName: 'params',
+        paramValid: true,
+        params: [key, ...values]
+      });
       const Component = renderHelper(
         // By default we render a simple div node component with the query results in it
         (value: any) => valueToText(type, value, true, true),

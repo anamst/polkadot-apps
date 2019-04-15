@@ -8,8 +8,9 @@ import { BareProps } from './types';
 import React from 'react';
 import styled from 'styled-components';
 import { Method, getTypeDef } from '@polkadot/types';
-import Params from '@polkadot/ui-params/index';
+import Params from '@polkadot/ui-params';
 
+import Static from './Static';
 import { classes } from './util';
 
 export type Props = BareProps & {
@@ -18,11 +19,11 @@ export type Props = BareProps & {
 };
 
 const Wrapper = styled.div`
-  .hash {
-    opacity: 0.5;
+  .hash .ui--Static {
     overflow: hidden;
-    padding: 0 0.5rem 0.75rem 1.75rem;
     text-overflow: ellipsis;
+    word-break: unset;
+    word-wrap: unset;
   }
 `;
 
@@ -47,11 +48,7 @@ export default class Call extends React.PureComponent<Props> {
         {children}
         {
           hash
-            ? (
-              <div className='hash'>
-                {hash.toHex()}
-              </div>
-            )
+            ? <Static className='hash' label='extrinsic hash'>{hash.toHex()}</Static>
             : null
         }
         <Params

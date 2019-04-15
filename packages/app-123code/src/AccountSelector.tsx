@@ -3,8 +3,8 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 import React from 'react';
-import { Bubble, InputAddress } from '@polkadot/ui-app/index';
-import { AccountIndex, Balance, Nonce } from '@polkadot/ui-reactive/index';
+import { Bubble, InputAddress } from '@polkadot/ui-app';
+import { AccountIndex, Balance, Nonce } from '@polkadot/ui-reactive';
 
 type Props = {
   onChange: (accountId?: string) => void
@@ -30,13 +30,13 @@ export default class AccountSelector extends React.PureComponent<Props, State> {
         />
         <div className='medium'>
           <Bubble color='teal' icon='address card' label='index'>
-            <AccountIndex value={accountId} />
+            <AccountIndex params={accountId} />
           </Bubble>
           <Bubble color='yellow' icon='adjust' label='balance'>
-            <Balance params={[accountId]} />
+            <Balance params={accountId} />
           </Bubble>
           <Bubble color='yellow' icon='target' label='transactions'>
-            <Nonce params={[accountId]} />
+            <Nonce params={accountId} />
           </Bubble>
         </div>
       </section>

@@ -6,27 +6,70 @@
 @import '../../../ui-app/src/styles/theme/_colors-substrate.css';
 
 .apps-Wrapper {
-  transition: padding-left 0.3s;
+  display: flex;
+  flex-direction: row;
+  transition: width 0.3s linear;
+
+  .apps-Menu-bg {
+    background: rgba(0,0,0,0.6);
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transition: opacity 0.2s;
+    width: 100%;
+    z-index: 299;
+
+    &.closed {
+      opacity: 0;
+      width: 0;
+    }
+
+    &.open {
+      opacity: 1;
+    }
+  }
+
+  .apps-SideBar-Wrapper {
+    display: flex;
+    position: relative;
+    transition: width 0.3s linear;
+    z-index: 300;
+
+    &.collapsed {
+      width: 4.2rem;
+    }
+
+    &.expanded {
+      width: 12rem;
+    }
+  }
 
   .apps--SideBar {
     align-items: center;
     background: #3f3f3f;
     display: flex;
     flex-flow: column;
-    min-height: 100vh;
+    height: auto;
     position: relative;
-    transition: width 0.3s;
-    z-index: 100;
+    transition: left 0.3s linear;
+    width: 100%;
 
     .ui.vertical.menu {
-      align-items: flex-end;
       display: flex;
-      flex-flow: column;
       height: 100vh;
       margin: 0;
+      top: 0;
+      width: 100%;
       position: sticky;
-      overflow-y: auto;
-      top: 0px;
+    }
+
+    .apps-SideBar-Scroll {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: scroll;
       width: 100%;
 
       &::-webkit-scrollbar {
@@ -38,44 +81,36 @@
     .apps--SideBar-Item {
       align-self: flex-end;
       flex-grow: 0;
-      overflow-x: visible;
+      padding: 0 !important;
       width: inherit;
 
-      padding: 0 !important;
       .text {
         padding-left: 0.5rem;
       }
     }
 
     .apps--SideBar-logo {
-      margin: 0.5rem 1.5rem 1rem 0.75rem;
+      margin: 0.5rem 1.5rem 1.5rem 0.75rem;
       padding-top: 0.75em;
       width: 9rem;
     }
 
     .apps--SideBar-collapse {
-      align-items: flex-end;
       background: #3f3f3f;
-      bottom: 0px;
-      display: flex;
-      flex-direction: row wrap;
-      flex-grow: 1;
-      justify-content: flex-start;
-      padding: 3.5rem 0 1rem 0;
+      bottom: 0;
+      left: 0;
+      padding: 0.75rem 0 .75rem 0.65rem;
       position: sticky;
+      right: 0;
+      text-align: left;
       width: 100%;
 
-      .ui.basic.secondary.button {
-        bottom: 0.75rem;
+      .ui.circular.button {
+        background: white !important;
+        color: #3f3f3f !important;
         box-shadow: 0 0 0 1px #eee inset !important;
-        color: #eee !important;
-        left: -0.06rem;
-        position: absolute;
+        margin: 0;
         transition: transform 0.15s;
-
-        &.rotated {
-          transform: rotate(180deg);
-        }
       }
     }
 
@@ -95,14 +130,15 @@
   }
 
   &.expanded .apps--SideBar {
-    padding-left: 0.74rem;
     text-align: left;
-    width: 12rem;
+
+    .apps-SideBar-Scroll {
+      padding-left: 0.75rem;
+    }
   }
 
   &.collapsed .apps--SideBar {
     text-align: center;
-    width: 4.2rem;
 
     .divider {
       display: none;
@@ -110,30 +146,37 @@
 
     .apps--SideBar-Item {
       margin-left: 5px;
-      .icon {
-        font-size: 1.28rem;
-      }
+
       .text {
         display: none;
       }
     }
 
     .apps--SideBar-logo {
-      margin: 0.125rem auto 0.625rem auto;
+      margin: 0.875rem auto;
+      padding: 0;
       width: 3rem;
-    }
-
-    a.apps--SideBar-Item-NavLink {
-      padding-bottom: 0.92em;
-      padding-top: 0.92em;
-
-      > i {
-        margin: 0;
-      }
     }
 
     .apps--SideBar-collapse .ui.basic.secondary.button {
       left: 0.66rem;
+    }
+  }
+
+  &.fixed {
+    .apps-SideBar-Wrapper {
+      position: absolute;
+      width: 0px;
+
+      .apps--SideBar {
+        padding-left: 0;
+      }
+    }
+  }
+
+  &.menu-open {
+    .apps-SideBar-Wrapper {
+      width: 12rem;
     }
   }
 }
@@ -158,23 +201,5 @@ a.apps--SideBar-Item-NavLink-active {
 
   &:hover {
     color: inherit;
-  }
-}
-
-.theme--polkadot {
-  a.apps--SideBar-Item-NavLink:hover {
-    color: $nav-link;
-    transition: 0.15s;
-
-    &:hover {
-      background: rgba(0,0,0,0.05);
-    }
-  }
-
-  a.apps--SideBar-Item-NavLink-active {
-    color: $nav-link;
-    &:hover {
-      color: $nav-link;
-    }
   }
 }

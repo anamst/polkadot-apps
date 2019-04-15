@@ -100,6 +100,13 @@ function createWebpack ({ alias = {}, context, name = 'index' }) {
           ]
         },
         {
+          test: /\.md$/,
+          use: [
+            require.resolve('html-loader'),
+            require.resolve('markdown-loader')
+          ]
+        },
+        {
           test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
           use: [
             {
@@ -147,11 +154,11 @@ function createWebpack ({ alias = {}, context, name = 'index' }) {
             name: 'react',
             test: /node_modules\/(chart|i18next|react|semantic-ui)/
           },
-          vendorSodium: {
+          polkadotJs: {
             chunks: 'initial',
             enforce: true,
-            name: 'sodium',
-            test: /node_modules\/(libsodium)/
+            name: 'polkadotjs',
+            test: /node_modules\/(@polkadot\/wasm-(crypto|dalek-ed25519|schnorrkel))/
           }
         }
       }

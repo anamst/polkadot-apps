@@ -7,7 +7,7 @@ import { AppProps, I18nProps } from '@polkadot/ui-app/types';
 import React from 'react';
 import store from 'store';
 import { getTypeRegistry } from '@polkadot/types';
-import { Button, Editor, InputFile } from '@polkadot/ui-app/index';
+import { Button, Editor, InputFile, Labelled } from '@polkadot/ui-app';
 import { ActionStatus } from '@polkadot/ui-app/Status/types';
 import { isJsonObject, stringToU8a, u8aToString } from '@polkadot/util';
 
@@ -64,17 +64,14 @@ class Developer extends React.PureComponent<Props, State> {
         </div>
         <div className='ui--row'>
           <div className='full'>
-            <div className='ui--Labelled'>
-              <label>{t('Manually enter your custom type definitions as valid JSON')}</label>
-              <div className='ui--Labelled-content'>
-                <Editor
-                  className='editor'
-                  code={code}
-                  isValid={isJsonValid}
-                  onEdit={this.onEditTypes}
-                />
-              </div>
-            </div>
+            <Labelled label={t('Manually enter your custom type definitions as valid JSON')}>
+              <Editor
+                className='editor'
+                code={code}
+                isValid={isJsonValid}
+                onEdit={this.onEditTypes}
+              />
+            </Labelled>>
           </div>
         </div>
         <Button.Group>
@@ -108,11 +105,10 @@ class Developer extends React.PureComponent<Props, State> {
   }
 
   private onChangeTypes = (data: Uint8Array) => {
-
-    const dataToString = u8aToString(data);
+    const code = u8aToString(data);
 
     try {
-      const types = JSON.parse(dataToString);
+      const types = JSON.parse(code);
       const typesPlaceholder = Object.keys(types).join(', ');
 
       console.log('Registering types:', typesPlaceholder);
@@ -120,7 +116,7 @@ class Developer extends React.PureComponent<Props, State> {
       getTypeRegistry().register(types);
 
       this.setState({
-        code: dataToString,
+        code,
         isJsonValid: true,
         isTypesValid: true,
         types,
@@ -128,11 +124,10 @@ class Developer extends React.PureComponent<Props, State> {
       });
 
     } catch (error) {
-
       console.error('Error registering types:', error);
 
       this.setState({
-        code: dataToString,
+        code,
         isJsonValid: false,
         isTypesValid: false,
         types: null,

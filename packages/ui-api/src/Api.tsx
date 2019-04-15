@@ -13,10 +13,12 @@ import { WsProvider } from '@polkadot/rpc-provider';
 import { InputNumber } from '@polkadot/ui-app/InputNumber';
 import keyring from '@polkadot/ui-keyring';
 import ApiSigner from '@polkadot/ui-signer/ApiSigner';
-import { formatBalance, isTestChain } from '@polkadot/ui-util';
 import { ChainProperties } from '@polkadot/types';
+import { formatBalance, isTestChain } from '@polkadot/util';
 
 import ApiContext from './ApiContext';
+
+let api: ApiPromise;
 
 type Props = {
   children: React.ReactNode,
@@ -29,6 +31,8 @@ type State = ApiProps & {
   chain?: string
 };
 
+export { api };
+
 export default class ApiWrapper extends React.PureComponent<Props, State> {
   state: State = {} as State;
 
@@ -40,50 +44,56 @@ export default class ApiWrapper extends React.PureComponent<Props, State> {
     const signer = new ApiSigner(queueExtrinsic, queueSetTxStatus);
 
     const setApi = (provider: ProviderInterface): void => {
-      const api = new ApiPromise({ provider, signer });
+      api = new ApiPromise({ provider, signer });
 
       this.setState({ api }, () => {
-        this.updateSubscriptions();
+        this.subscribeEvents();
       });
     };
     const setApiUrl = (url: string = defaults.WS_URL): void =>
       setApi(new WsProvider(url));
 
+    api = new ApiPromise({ provider, signer });
+
     this.state = {
       isApiConnected: false,
       isApiReady: false,
-      api: new ApiPromise({ provider, signer }),
+      api,
       setApiUrl
     } as State;
   }
 
   componentDidMount () {
-    this.updateSubscriptions();
+    this.subscribeEvents();
   }
 
-  private updateSubscriptions () {
+  private subscribeEvents () {
     const { api } = this.state;
 
-    [
-      this.subscribeIsConnected,
-      this.subscribeIsReady,
-      this.subscribeChain
-    ].map((fn: Function) => {
+    api.on('connected', () => {
+      this.setState({ isApiConnected: true });
+    });
+
+    api.on('disconnected', () => {
+      this.setState({ isApiConnected: false });
+    });
+
+    api.on('ready', async () => {
       try {
-        return fn(api);
+        await this.loadOnReady(api);
       } catch (error) {
-        console.error(error);
-        return null;
+        console.error('Unable to load chain', error);
       }
     });
   }
 
-  private subscribeChain = async (api: ApiPromise) => {
+  private async loadOnReady (api: ApiPromise) {
     const [properties = new ChainProperties(), value] = await Promise.all([
       api.rpc.system.properties() as Promise<ChainProperties | undefined>,
       api.rpc.system.chain() as Promise<any>
     ]);
-
+    const section = Object.keys(api.tx)[0];
+    const method = Object.keys(api.tx[section])[0];
     const chain = value
       ? value.toString()
       : null;
@@ -105,28 +115,11 @@ export default class ApiWrapper extends React.PureComponent<Props, State> {
       type: 'ed25519'
     });
 
-    this.setState({ chain, isDevelopment });
-  }
-
-  private subscribeIsConnected = (api: ApiPromise) => {
-    api.on('connected', () => {
-      this.setState({ isApiConnected: true });
-    });
-
-    api.on('disconnected', () => {
-      this.setState({ isApiConnected: false });
-    });
-  }
-
-  private subscribeIsReady = (api: ApiPromise) => {
-    api.on('ready', () => {
-      const section = Object.keys(api.tx)[0];
-      const method = Object.keys(api.tx[section])[0];
-
-      this.setState({
-        isApiReady: true,
-        apiDefaultTx: api.tx[section][method]
-      });
+    this.setState({
+      isApiReady: true,
+      apiDefaultTx: api.tx[section][method],
+      chain,
+      isDevelopment
     });
   }
 

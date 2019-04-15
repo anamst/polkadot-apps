@@ -9,11 +9,11 @@ import { RawParam } from '@polkadot/ui-params/types';
 import BN from 'bn.js';
 import React from 'react';
 import { ReferendumInfoExtended } from '@polkadot/api-derive/democracy/referendumInfo';
-import { Chart, Static } from '@polkadot/ui-app/index';
+import { Chart, Static } from '@polkadot/ui-app';
 import VoteThreshold from '@polkadot/ui-params/Param/VoteThreshold';
-import { withCalls } from '@polkadot/ui-api/index';
-import { formatBalance, formatNumber } from '@polkadot/ui-util';
+import { withCalls } from '@polkadot/ui-api';
 import settings from '@polkadot/ui-settings';
+import { formatBalance, formatNumber } from '@polkadot/util';
 
 import Item from './Item';
 import Voting from './Voting';

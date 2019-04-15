@@ -5,12 +5,11 @@
 import { I18nProps } from '@polkadot/ui-app/types';
 import { ApiProps } from '@polkadot/ui-api/types';
 import { QueueProps } from '@polkadot/ui-app/Status/types';
-import { RouteProps } from '../types';
 
 import React from 'react';
 import { withRouter } from 'react-router';
 import styled from 'styled-components';
-import { withCalls, withMulti } from '@polkadot/ui-api/index';
+import { withCalls, withMulti } from '@polkadot/ui-api';
 import { QueueConsumer } from '@polkadot/ui-app/Status/Context';
 
 import Status from './Status';
@@ -32,6 +31,15 @@ const Wrapper = styled.div`
   overflow-x: hidden;
   overflow-y: auto;
   width: 100%;
+  padding: 0 2rem;
+
+  @media(max-width: 768px) {
+    padding: 0 0.5rem;
+  }
+`;
+
+const Connecting = styled.div`
+  padding: 1rem 0;
 `;
 
 const unknown = {
@@ -53,22 +61,17 @@ class Content extends React.Component<Props> {
     if (needsApi && (!isApiReady || !isApiConnected)) {
       return (
         <Wrapper>
-          <main>{t('Waiting for API to be connected and ready.')}</main>
+          <Connecting>{t('Waiting for API to be connected and ready.')}</Connecting>
         </Wrapper>
       );
     }
-
-    // inject router into component that we are rendering (in some cases react-router does
-    // not play 100% with styled-components because of the new vs old context usage, this
-    // is a workaround for that)
-    const ComponentRouted = (withRouter(Component as any) as any) as React.ComponentType<RouteProps>;
 
     return (
       <Wrapper>
         <QueueConsumer>
           {({ queueAction, stqueue, txqueue }: QueueProps) => (
             <>
-              <ComponentRouted
+              <Component
                 basePath={`/${name}`}
                 location={location}
                 onStatusChange={queueAction}
@@ -94,8 +97,10 @@ export default withMulti(
   // These API queries are used in a number of places, warm them up
   // to avoid constant un-/re-subscribe on these
   withCalls<Props>(
-    'query.session.validators',
     'derive.accounts.indexes',
-    'derive.balances.fees'
+    'derive.balances.fees',
+    'derive.staking.controllers',
+    'query.staking.nominators',
+    'query.session.validators'
   )
 );

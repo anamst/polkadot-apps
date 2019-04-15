@@ -21,7 +21,7 @@ export type AccountInfo = {
   accountId?: string | null
 };
 
-export type QueueTx$Status = 'future' | 'ready' | 'finalised' | 'usurped' | 'dropped' | 'invalid' | 'broadcast' | 'cancelled' | 'completed' | 'error' | 'incomplete' | 'queued' | 'sending' | 'sent' | 'blocked';
+export type QueueTx$Status = 'future' | 'ready' | 'finalized' | 'usurped' | 'dropped' | 'invalid' | 'broadcast' | 'cancelled' | 'completed' | 'error' | 'incomplete' | 'queued' | 'sending' | 'sent' | 'blocked';
 
 export type SignerCallback = (id: number, isSigned: boolean) => void;
 
@@ -33,10 +33,11 @@ export type QueueTx = AccountInfo & {
   id: number,
   isUnsigned?: boolean,
   result?: any,
+  removeItem: () => void,
   rpc: RpcMethod,
   signerCb?: SignerCallback,
   signerOptions?: SignatureOptions,
-  txFailedCb?: TxCallback,
+  txFailedCb?: (status: SubmittableResult | null) => void,
   txSuccessCb?: TxCallback,
   txUpdateCb?: TxCallback,
   values?: Array<any>,
@@ -45,7 +46,8 @@ export type QueueTx = AccountInfo & {
 
 export type QueueStatus = ActionStatus & {
   id: number,
-  isCompleted: boolean
+  isCompleted: boolean,
+  removeItem: () => void
 };
 
 export type QueueTx$Result = {

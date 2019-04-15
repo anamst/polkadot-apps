@@ -12,9 +12,9 @@ import { SubjectInfo } from '@polkadot/ui-keyring/observable/types';
 import { QueueTx, QueueTx$MessageSetStatus, QueueTx$Result, QueueTx$Status } from '@polkadot/ui-app/Status/types';
 
 import React from 'react';
-import { Button, Modal } from '@polkadot/ui-app/index';
+import { Button, Modal } from '@polkadot/ui-app';
 import keyring from '@polkadot/ui-keyring';
-import { withApi, withMulti, withObservable } from '@polkadot/ui-api/index';
+import { withApi, withMulti, withObservable } from '@polkadot/ui-api';
 import accountObservable from '@polkadot/ui-keyring/observable/accounts';
 import { assert, isFunction } from '@polkadot/util';
 import { format } from '@polkadot/util/logger';
@@ -229,12 +229,16 @@ class Signer extends React.PureComponent<Props, State> {
       return;
     }
 
-    const { id, signerCb } = currentItem;
+    const { id, signerCb, txFailedCb } = currentItem;
 
     queueSetTxStatus(id, 'cancelled');
 
     if (isFunction(signerCb)) {
       signerCb(id, false);
+    }
+
+    if (isFunction(txFailedCb)) {
+      txFailedCb(null);
     }
   }
 
@@ -322,21 +326,20 @@ class Signer extends React.PureComponent<Props, State> {
 
     try {
       const unsubscribe = await extrinsicCall.apply(extrinsic, [..._params, async (result: SubmittableResult) => {
-        if (!result || !result.type || !result.status) {
+        if (!result || !result.status) {
           return;
         }
 
-        const status = result.type.toLowerCase() as QueueTx$Status;
+        const status = result.status.type.toLowerCase() as QueueTx$Status;
 
-        console.log('makeExtrinsicCall: updated status ::', result);
-
+        console.log('makeExtrinsicCall: updated status ::', JSON.stringify(result));
         queueSetTxStatus(id, status, result);
 
         if (isFunction(txUpdateCb)) {
           txUpdateCb(result);
         }
 
-        if (status === 'finalised') {
+        if (result.status.isFinalized) {
           unsubscribe();
 
           result.events
@@ -353,6 +356,10 @@ class Signer extends React.PureComponent<Props, State> {
     } catch (error) {
       console.error('makeExtrinsicCall: error:', error.message);
       queueSetTxStatus(id, 'error', {}, error);
+
+      if (isFunction(txFailedCb)) {
+        txFailedCb(null);
+      }
     }
   }
 

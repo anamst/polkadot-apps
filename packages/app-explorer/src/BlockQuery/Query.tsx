@@ -5,7 +5,7 @@
 import { I18nProps } from '@polkadot/ui-app/types';
 
 import React from 'react';
-import { Button, Input } from '@polkadot/ui-app/index';
+import { Button, Input } from '@polkadot/ui-app';
 import { isHex } from '@polkadot/util';
 
 import translate from '../translate';
@@ -36,8 +36,7 @@ class Query extends React.PureComponent<Props, State> {
     return (
       <summary>
         <div className='ui--row'>
-          <div className='small' />
-          <div className='storage--actionrow medium'>
+          <div className='storage--actionrow head'>
             <Input
               className='storage--actionrow-value'
               defaultValue={this.props.value}

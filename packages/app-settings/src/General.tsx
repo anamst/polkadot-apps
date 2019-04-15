@@ -6,8 +6,7 @@ import { AppProps, I18nProps } from '@polkadot/ui-app/types';
 import { SettingsStruct } from '@polkadot/ui-settings/types';
 
 import React from 'react';
-import { Tab } from 'semantic-ui-react';
-import { Button, Dropdown, Input } from '@polkadot/ui-app/index';
+import { Button, Dropdown, Input } from '@polkadot/ui-app';
 import { ActionStatus } from '@polkadot/ui-app/Status/types';
 import uiSettings from '@polkadot/ui-settings';
 
@@ -53,9 +52,7 @@ class General extends React.PureComponent<Props, State> {
 
     return (
       <div className='settings-General'>
-        <div className='ui--row'>
-          {this.renderEndpoint()}
-        </div>
+        {this.renderEndpoint()}
         <div className='ui--row'>
           <div className='medium'>
             <Dropdown
@@ -80,7 +77,6 @@ class General extends React.PureComponent<Props, State> {
               defaultValue={i18nLang}
               isDisabled
               label={t('default interface language')}
-              onChange={this.onChangeLang}
               options={uiSettings.availableLanguages}
             />
           </div>
@@ -99,33 +95,46 @@ class General extends React.PureComponent<Props, State> {
 
   private renderEndpoint = () => {
     const { t } = this.props;
-    const { isUrlValid, settings: { apiUrl } } = this.state;
-
-    const preset = (
-      <Dropdown
-        defaultValue={apiUrl}
-        label={t('remote node/endpoint to connect to')}
-        onChange={this.onChangeApiUrl}
-        options={uiSettings.availableNodes}
-      />
-    );
-
-    const custom = (
-      <Input
-        defaultValue={apiUrl}
-        isError={!isUrlValid}
-        label={t('remote node/endpoint to connect to')}
-        onChange={this.onChangeApiUrl}
-      />
-    );
-
-    const panes = [
-      { menuItem: t('pre-set'), render: () => <Tab.Pane attached={true}>{preset}</Tab.Pane> },
-      { menuItem: t('custom'), render: () => <Tab.Pane attached={true}>{custom}</Tab.Pane> }
-    ];
+    const { isCustomNode, isUrlValid, settings: { apiUrl } } = this.state;
 
     return (
-      <Tab menu={{ secondary: true }} onTabChange={this.toggleCustomNode} panes={panes} />
+      <>
+        <Button.Group isBasic>
+          <Button
+            isBasic
+            isNegative={!isCustomNode}
+            label={t('preset')}
+            onClick={this.toggleCustomNode}
+          />
+          <Button
+            isBasic
+            isNegative={isCustomNode}
+            label={t('custom')}
+            onClick={this.toggleCustomNode}
+          />
+        </Button.Group>
+        <div className='ui--row'>
+          {
+            isCustomNode
+              ? (
+                <Input
+                  defaultValue={apiUrl}
+                  isError={!isUrlValid}
+                  label={t('remote node/endpoint to connect to')}
+                  onChange={this.onChangeApiUrl}
+                />
+              )
+              : (
+                <Dropdown
+                  defaultValue={apiUrl}
+                  label={t('remote node/endpoint to connect to')}
+                  onChange={this.onChangeApiUrl}
+                  options={uiSettings.availableNodes}
+                />
+              )
+          }
+        </div>
+      </>
     );
   }
 
@@ -137,10 +146,6 @@ class General extends React.PureComponent<Props, State> {
         apiUrl
       }
     }));
-  }
-
-  private onChangeLang = (i18nLang: string): void => {
-    // ignore (for now), here to future-proof
   }
 
   private onChangeUiMode = (uiMode: string): void => {
