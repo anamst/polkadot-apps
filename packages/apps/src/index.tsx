@@ -27,6 +27,14 @@ if (!rootElement) {
 
 console.log('Web socket url=', url);
 
+const types = {
+  'DelegationNodeId' : 'Hash',
+  'PublicSigningKey' : 'Hash',
+  'PublicBoxKey' : 'Hash',
+  'Permissions' : 'u32'
+}
+store.set('types', types)
+
 try {
   const types = store.get('types') || {};
   const names = Object.keys(types);
