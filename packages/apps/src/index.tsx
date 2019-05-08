@@ -31,7 +31,8 @@ const types = {
   'DelegationNodeId' : 'Hash',
   'PublicSigningKey' : 'Hash',
   'PublicBoxKey' : 'Hash',
-  'Permissions' : 'u32'
+  'Permissions' : 'u32',
+  'ErrorCode' : 'u16',
 }
 store.set('types', types)
 

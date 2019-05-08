@@ -45,8 +45,8 @@ const Wrapper = styled.div`
 `;
 
 settings.availableNodes.push({
-  text: 'KILT Testnet (bootnode-alice.kilt-prototype.tk:9944)',
-  value: 'ws://bootnode-alice.kilt-prototype.tk:9944/'
+  text: 'KILT Testnet (full-nodes.kilt.io:9944)',
+  value: 'wss://full-nodes.kilt.io:9944/'
 });
 
 class Apps extends React.Component<Props, State> {
