@@ -21,8 +21,8 @@
   },
   "scripts": {
     "analyze": "yarn run build && cd packages/apps && yarn run source-map-explorer build/main.*.js",
-    "build": "yarn run build:code && yarn run build:i18n",
-    "build:code": "NODE_ENV=production polkadot-dev-build-ts",
+    "build": "export WS_URL=wss://full-nodes.kilt.io:9944/; yarn run build:code && yarn run build:i18n",
+    "build:code": "export WS_URL=wss://full-nodes.kilt.io:9944/; NODE_ENV=production polkadot-dev-build-ts",
     "build:i18n": "i18next-scanner --config i18next-scanner.config.js",
     "docs": "echo \"skipping docs\"",
     "clean": "polkadot-dev-clean-build",
@@ -31,7 +31,7 @@
     "postinstall": "polkadot-dev-yarn-only",
     "test": "echo \"skipping tests\"",
     "vanitygen": "node packages/app-accounts/scripts/vanitygen.js",
-    "start": "cd packages/apps && webpack --config webpack.config.js"
+    "start": "export WS_URL=wss://full-nodes.kilt.io:9944/; cd packages/apps && webpack --config webpack.config.js"
   },
   "devDependencies": {
     "@babel/core": "^7.7.7",
