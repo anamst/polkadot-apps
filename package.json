@@ -21,14 +21,14 @@
   },
   "scripts": {
     "analyze": "yarn run build && cd packages/apps && yarn run source-map-explorer build/main.*.js",
-    "build": "NODE_ENV=production polkadot-dev-build-ts",
+    "build": "export WS_URL=wss://full-nodes.kilt.io:9944/; NODE_ENV=production polkadot-dev-build-ts",
     "check": "yarn lint",
     "lint": "tslint --project . && tsc --noEmit --pretty",
     "clean": "polkadot-dev-clean-build",
     "postinstall": "polkadot-dev-yarn-only",
     "test": "echo \"skipping tests\"",
     "vanitygen": "node packages/app-accounts/scripts/vanitygen.js",
-    "start": "cd packages/apps && webpack --config webpack.config.js"
+    "start": "export WS_URL=wss://full-nodes.kilt.io:9944/; cd packages/apps && webpack --config webpack.config.js"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
