@@ -1,4 +1,4 @@
-// Copyright 2017-2019 @polkadot/apps authors & contributors
+// Copyright 2017-2020 @polkadot/apps authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
@@ -6,12 +6,28 @@
 
 import React from 'react';
 import styled from 'styled-components';
+import { BestNumber, Chain, NodeName, NodeVersion } from '@polkadot/react-query';
 
-import { BestNumber, Chain, NodeName, NodeVersion } from '@polkadot/ui-reactive';
+interface Props {
+  className?: string;
+}
 
-type Props = {};
+function TopBar ({ className }: Props): React.ReactElement<Props> {
+  return (
+    <div className={className}>
+      <div>
+        <NodeName />&nbsp;
+        <NodeVersion label='v' />
+      </div>
+      <div>
+        <Chain />&nbsp;
+        <BestNumber label='#' />
+      </div>
+    </div>
+  );
+}
 
-const Wrapper = styled.div`
+export default styled(TopBar)`
   background: #f2f2f2;
   font-size: 0.85rem;
   line-height: 1rem;
@@ -38,20 +54,3 @@ const Wrapper = styled.div`
     }
   }
 `;
-
-export default class TopBar extends React.PureComponent<Props> {
-  render () {
-    return (
-      <Wrapper>
-        <div>
-          <NodeName />&nbsp;
-          <NodeVersion label='v' />
-        </div>
-        <div>
-          <Chain />&nbsp;
-          <BestNumber label='#' />
-        </div>
-      </Wrapper>
-    );
-  }
-}

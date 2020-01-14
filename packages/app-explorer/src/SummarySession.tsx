@@ -1,102 +1,88 @@
-// Copyright 2017-2019 @polkadot/app-explorer authors & contributors
+// Copyright 2017-2020 @polkadot/app-explorer authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { I18nProps } from '@polkadot/ui-app/types';
+import { DerivedSessionInfo } from '@polkadot/api-derive/types';
+import { I18nProps } from '@polkadot/react-components/types';
 
-import BN from 'bn.js';
-import React from 'react';
-import { BlockNumber } from '@polkadot/types';
-import { CardSummary } from '@polkadot/ui-app';
-import { withCalls } from '@polkadot/ui-api';
+import React, { useEffect, useState } from 'react';
+import { CardSummary } from '@polkadot/react-components';
+import { useApi, useCall } from '@polkadot/react-hooks';
 
 import translate from './translate';
+import { formatNumber } from '@polkadot/util';
 
-type Props = I18nProps & {
-  session_eraLength?: BN,
-  session_eraProgress?: BN,
-  session_sessionProgress?: BN,
-  // FIXME Replaced in poc-3, we should calculate the session reward
-  // sessionBrokenValue?: BN,
-  // sessionBrokenPercentLate?: BN,
-  session_sessionLength?: BlockNumber,
-  withBroken?: boolean,
-  withEra?: boolean,
-  withSession?: boolean
-};
-
-class SummarySession extends React.PureComponent<Props> {
-  render () {
-    return (
-      <>
-        {this.renderSession()}
-        {this.renderEra()}
-      </>
-    );
-  }
-
-  // private renderBroken () {
-  //   const { sessionBrokenValue, sessionBrokenPercentLate, t, withBroken = true } = this.props;
-
-  //   if (!withBroken) {
-  //     return null;
-  //   }
-
-  //   return (
-  //     <CardSummary
-  //       label={t('lateness')}
-  //       progress={{
-  //         color: 'autoReverse',
-  //         isPercent: true,
-  //         total: sessionBrokenPercentLate,
-  //         value: sessionBrokenValue
-  //       }}
-  //     />
-  //   );
-  // }
-
-  private renderEra () {
-    const { session_eraLength, session_eraProgress, t, withEra = true } = this.props;
-
-    if (!withEra) {
-      return null;
-    }
-
-    return (
-      <CardSummary
-        label={t('era')}
-        progress={{
-          total: session_eraLength,
-          value: session_eraProgress
-        }}
-      />
-    );
-  }
-
-  private renderSession () {
-    const { session_sessionProgress, session_sessionLength = new BN(0), t, withSession = true } = this.props;
-
-    if (!withSession) {
-      return null;
-    }
-
-    return (
-      <CardSummary
-        label={t('session')}
-        progress={{
-          total: session_sessionLength,
-          value: session_sessionProgress
-        }}
-      />
-    );
-  }
+interface Props extends I18nProps {
+  sessionInfo?: DerivedSessionInfo;
+  withEra?: boolean;
+  withSession?: boolean;
 }
 
-export default translate(
-  withCalls<Props>(
-    'derive.session.eraLength',
-    'derive.session.eraProgress',
-    'derive.session.sessionProgress',
-    'query.session.sessionLength'
-  )(SummarySession)
-);
+function renderSession ({ sessionInfo, t, withSession = true }: Props): React.ReactNode {
+  if (!withSession || !sessionInfo) {
+    return null;
+  }
+
+  const label = sessionInfo.isEpoch && sessionInfo.sessionLength.gtn(1)
+    ? t('epoch')
+    : t('session');
+
+  return sessionInfo.sessionLength.gtn(0)
+    ? (
+      <CardSummary
+        label={label}
+        progress={{
+          total: sessionInfo.sessionLength,
+          value: sessionInfo.sessionProgress
+        }}
+      />
+    )
+    : (
+      <CardSummary label={label}>
+        {formatNumber(sessionInfo.currentIndex)}
+      </CardSummary>
+    );
+}
+
+function renderEra ({ sessionInfo, t, withEra = true }: Props): React.ReactNode {
+  if (!withEra || !sessionInfo) {
+    return null;
+  }
+
+  const label = t('era');
+
+  return sessionInfo.sessionLength.gtn(0)
+    ? (
+      <CardSummary
+        label={label}
+        progress={{
+          total: sessionInfo.eraLength,
+          value: sessionInfo.eraProgress
+        }}
+      />
+    )
+    : (
+      <CardSummary label={label}>
+        {formatNumber(sessionInfo.currentEra)}
+      </CardSummary>
+    );
+}
+
+function SummarySession (props: Props): React.ReactElement<Props> {
+  const { api } = useApi();
+  const sessionInfo = useCall<DerivedSessionInfo>(api.derive.session.info, []);
+  const [expanded, setExpanded] = useState<Props>(props);
+
+  useEffect((): void => {
+    setExpanded({ ...props, sessionInfo });
+  }, [props, sessionInfo]);
+
+  return (
+    <>
+      {renderSession(expanded)}
+      {renderEra(expanded)}
+    </>
+  );
+}
+
+export default translate(SummarySession);

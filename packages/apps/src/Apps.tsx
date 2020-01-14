@@ -1,214 +1,114 @@
-// Copyright 2017-2019 @polkadot/apps authors & contributors
+// Copyright 2017-2020 @polkadot/apps authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { BareProps } from '@polkadot/ui-app/types';
-import { SideBarTransition, SIDEBAR_TRANSITION_DURATION, SIDEBAR_MENU_THRESHOLD } from './constants';
+import { BareProps as Props } from '@polkadot/react-components/types';
 
-import React from 'react';
+// this is disabled, Chrome + WASM memory leak makes it slow & laggy. If enabled
+// we also need to export the default as hot(Apps) (last line)
+// import { hot } from 'react-hot-loader/root';
+
+import React, { useEffect, useState } from 'react';
 import store from 'store';
-import styled, { ThemeProvider } from 'styled-components';
-import { media } from '@polkadot/ui-app';
-import { classes } from '@polkadot/ui-app/util';
-import Signer from '@polkadot/ui-signer';
-import settings from '@polkadot/ui-settings';
+import styled from 'styled-components';
+import GlobalStyle from '@polkadot/react-components/styles';
+import { useApi, useCall } from '@polkadot/react-hooks';
+import Signer from '@polkadot/react-signer';
 
-import { hot } from 'react-hot-loader/root';
-
-import Connecting from './Connecting';
+import ConnectingOverlay from './overlays/Connecting';
+import AccountsOverlay from './overlays/Accounts';
+import { SideBarTransition, SIDEBAR_MENU_THRESHOLD } from './constants';
 import Content from './Content';
 import SideBar from './SideBar';
+import settings from '@polkadot/ui-settings';
+interface SidebarState {
+  isCollapsed: boolean;
+  isMenu: boolean;
+  menuOpen: boolean;
+  transition: SideBarTransition;
+}
 
-type Props = BareProps & {};
+settings.availableNodes.unshift({
+  text: 'KILT Testnet (full-nodes.kilt.io:9944)',
+  value: 'wss://full-nodes.kilt.io:9944/',
+  info: ''
+});
 
-type State = {
-  isCollapsed: boolean,
-  isMenu: boolean,
-  menuOpen: boolean,
-  transition: SideBarTransition
-};
+function WarmUp (): React.ReactElement {
+  const { api, isApiReady } = useApi();
+  const fees = useCall<any>(isApiReady ? api.derive.balances.fees : undefined, []);
+  const indexes = useCall<any>(isApiReady ? api.derive.accounts.indexes : undefined, []);
+  const registrars = useCall<any>(isApiReady ? api.query.identity?.registrars : undefined, []);
+  const staking = useCall<any>(isApiReady ? api.derive.staking.overview : undefined, []);
+  const [hasValues, setHasValues] = useState(false);
 
-const Wrapper = styled.div`
+  useEffect((): void => {
+    setHasValues(!!fees || !!indexes || !!registrars || !!staking);
+  }, []);
+
+  return (
+    <div className={`api-warm ${hasValues}`} />
+  );
+}
+
+function Apps ({ className }: Props): React.ReactElement<Props> {
+  const [sidebar, setSidebar] = useState<SidebarState>({
+    isCollapsed: false,
+    transition: SideBarTransition.COLLAPSED,
+    ...store.get('sidebar', {}),
+    menuOpen: false,
+    isMenu: window.innerWidth < SIDEBAR_MENU_THRESHOLD
+  });
+
+  const { isCollapsed, isMenu, menuOpen } = sidebar;
+
+  const _setSidebar = (update: Partial<SidebarState>): void =>
+    setSidebar(store.set('sidebar', { ...sidebar, ...update }));
+  const _collapse = (): void =>
+    _setSidebar({ isCollapsed: !isCollapsed });
+  const _toggleMenu = (): void =>
+    _setSidebar({ isCollapsed: false, menuOpen: true });
+  const _handleResize = (): void => {
+    const transition = window.innerWidth < SIDEBAR_MENU_THRESHOLD
+      ? SideBarTransition.MINIMISED_AND_EXPANDED
+      : SideBarTransition.EXPANDED_AND_MAXIMISED;
+
+    _setSidebar({
+      isMenu: transition === SideBarTransition.MINIMISED_AND_EXPANDED,
+      menuOpen: false,
+      transition
+    });
+  };
+
+  return (
+    <>
+      <GlobalStyle />
+      <div className={`apps-Wrapper ${isCollapsed ? 'collapsed' : 'expanded'} ${isMenu && 'fixed'} ${menuOpen && 'menu-open'} theme--default ${className}`}>
+        <div
+          className={`apps-Menu-bg ${menuOpen ? 'open' : 'closed'}`}
+          onClick={_handleResize}
+        />
+        <SideBar
+          collapse={_collapse}
+          handleResize={_handleResize}
+          menuOpen={menuOpen}
+          isCollapsed={isCollapsed}
+          toggleMenu={_toggleMenu}
+        />
+        <Signer>
+          <Content />
+        </Signer>
+        <ConnectingOverlay />
+        <AccountsOverlay />
+      </div>
+      <WarmUp />
+    </>
+  );
+}
+
+export default styled(Apps)`
   align-items: stretch;
   box-sizing: border-box;
   display: flex;
   min-height: 100vh;
-
-  header {
-    margin-bottom: 0.8rem;
-    text-align: center;
-
-    ${media.TABLET`
-      margin-bottom: 1.1rem;
-   `}
-  }
 `;
-
-
-settings.availableNodes.unshift({
-  text: 'KILT Testnet (full-nodes.kilt.io:9944)',
-  value: 'wss://full-nodes.kilt.io:9944/'
-});
-
-class Apps extends React.Component<Props, State> {
-  state: State;
-
-  constructor (props: Props) {
-    super(props);
-
-    const state = store.get('sidebar') || {};
-
-    this.state = {
-      isCollapsed: false,
-      menuOpen: false,
-      transition: SideBarTransition.COLLAPSED,
-      ...state
-    };
-  }
-
-  componentDidMount () {
-    this.setState({
-      menuOpen: false,
-      isMenu: window.innerWidth >= SIDEBAR_MENU_THRESHOLD ? false : true
-    });
-  }
-
-  componentDidUpdate () {
-    this.handleMenuTransition();
-  }
-
-  render () {
-
-    const { isCollapsed, isMenu, menuOpen } = this.state;
-    return (
-      <ThemeProvider
-        theme={{ theme: settings.uiTheme }}
-      >
-        <Wrapper
-          className={
-            classes('apps-Wrapper',
-                     !isCollapsed ? 'expanded' : 'collapsed',
-                     isMenu ? 'fixed' : '',
-                     menuOpen ? 'menu-open' : '',
-                     `theme--${settings.uiTheme}`)
-          }
-        >
-          {this.renderMenuBg()}
-          <SideBar
-            collapse={this.collapse}
-            handleResize={this.handleResize}
-            menuOpen={menuOpen}
-            isCollapsed={isCollapsed}
-            toggleMenu={this.toggleMenu}
-          />
-          <Signer>
-            <Content />
-          </Signer>
-          <Connecting />
-        </Wrapper>
-      </ThemeProvider>
-    );
-  }
-
-  private collapse = (): void => {
-    this.setState(({ isCollapsed }: State) => ({
-      isCollapsed: !isCollapsed
-    }), () => {
-      store.set('sidebar', this.state);
-    });
-  }
-
-  private handleResize = (): void => {
-    const { isMenu, menuOpen } = this.state;
-    const dir = window.innerWidth < SIDEBAR_MENU_THRESHOLD ? 'hide' : 'show';
-
-    if (!menuOpen) {
-      if ((isMenu && dir === 'hide') || (!isMenu && dir === 'show')) {
-        return;
-      }
-    }
-
-    const transition = (dir === 'hide')
-      ? SideBarTransition.MINIMISED_AND_EXPANDED
-      : SideBarTransition.EXPANDED_AND_MAXIMISED;
-
-    this.toggleMenuResize(transition);
-  }
-
-  private handleMenuTransition = (): void => {
-    const { transition } = this.state;
-
-    switch (transition) {
-      case SideBarTransition.MINIMISED_AND_EXPANDED:
-        setTimeout(() => {
-          this.setState({
-            isMenu: true,
-            isCollapsed: false,
-            transition: SideBarTransition.COLLAPSED
-          });
-        }, SIDEBAR_TRANSITION_DURATION);
-        break;
-
-      case SideBarTransition.EXPANDED_AND_MAXIMISED:
-        setTimeout(() => {
-          this.setState({
-            isMenu: false,
-            isCollapsed: store.get('sidebar').isCollapsed,
-            transition: SideBarTransition.EXPANDED
-          });
-        }, SIDEBAR_TRANSITION_DURATION);
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  private renderMenuBg = () => {
-    return (
-      <div
-        className={
-          classes(
-            'apps-Menu-bg',
-            this.state.menuOpen ? 'open' : 'closed')
-          }
-        onClick={this.handleResize}
-      >
-      </div>
-    );
-  }
-
-  private toggleMenu = (): void => {
-    this.setState({
-      isCollapsed: false,
-      menuOpen: true
-    });
-  }
-
-  private toggleMenuResize = (transition: SideBarTransition): void => {
-    switch (transition) {
-      case SideBarTransition.MINIMISED_AND_EXPANDED:
-        this.setState({
-          isMenu: true,
-          menuOpen: false,
-          transition: transition
-        });
-        break;
-
-      case SideBarTransition.EXPANDED_AND_MAXIMISED:
-        this.setState({
-          menuOpen: false,
-          transition: transition
-        });
-        break;
-
-      default:
-        this.setState(({ isCollapsed }: State) => ({
-          isCollapsed: !isCollapsed
-        }));
-        break;
-    }
-  }
-}
-
-export default hot(Apps);
