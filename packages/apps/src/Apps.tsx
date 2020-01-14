@@ -28,7 +28,6 @@ interface SidebarState {
   transition: SideBarTransition;
 }
 
-
 settings.availableNodes.unshift({
   text: 'KILT Testnet (full-nodes.kilt.io:9944)',
   value: 'wss://full-nodes.kilt.io:9944/',

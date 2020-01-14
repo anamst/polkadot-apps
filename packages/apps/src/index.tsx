@@ -20,7 +20,7 @@ import Queue from '@polkadot/react-components/Status/Queue';
 import { BlockAuthors, Events } from '@polkadot/react-query';
 
 import Apps from './Apps';
-
+export {};
 const rootId = 'root';
 const rootElement = document.getElementById(rootId);
 
