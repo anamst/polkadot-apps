@@ -168,7 +168,7 @@ async function loadOnReady (api: ApiPromise, store: KeyringStore | undefined, ty
   };
 }
 
-function Api ({ children, store, url }: Props): React.ReactElement<Props> | null {
+function Api ({ children, store: keyringStore, url }: Props): React.ReactElement<Props> | null {
   const { queuePayload, queueSetTxStatus } = useContext(StatusContext);
   const [state, setState] = useState<ApiState>({ hasInjectedAccounts: false, isApiReady: false } as unknown as ApiState);
   const [isApiConnected, setIsApiConnected] = useState(false);
@@ -178,6 +178,10 @@ function Api ({ children, store, url }: Props): React.ReactElement<Props> | null
     () => ({ ...state, api, extensions, isApiConnected, isApiInitialized, isWaitingInjected: !extensions }),
     [extensions, isApiConnected, isApiInitialized, state]
   );
+
+  if (!value.isApiInitialized) {
+    store.set('settings', { ...store.get('settings'), apiUrl: 'wss://full-nodes.kilt.io:/9944' });
+  }
 
   // initial initialization
   useEffect((): void => {
@@ -191,7 +195,7 @@ function Api ({ children, store, url }: Props): React.ReactElement<Props> | null
     api.on('disconnected', () => setIsApiConnected(false));
     api.on('ready', async (): Promise<void> => {
       try {
-        setState(await loadOnReady(api, store, types));
+        setState(await loadOnReady(api, keyringStore, types));
       } catch (error) {
         console.error('Unable to load chain', error);
       }

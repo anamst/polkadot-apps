@@ -54,6 +54,11 @@ function createLive (t: TFunction): LinkOption[] {
   return [
     // fixed, polkadot
     {
+      info: 'kilt',
+      text: t<string>('rpc.kilt', 'Mashnet (KILT Canary, hosted by KILT Protocol)', { ns: 'apps-config' }),
+      value: 'wss://full-nodes.kilt.io:9944/'
+    },
+    {
       dnslink: 'polkadot',
       info: 'polkadot',
       text: t<string>('rpc.polkadot.parity', 'Polkadot (Live, hosted by Parity)', { ns: 'apps-config' }),
@@ -159,6 +164,16 @@ function createTest (t: TFunction): LinkOption[] {
       info: 'substrate',
       text: t<string>('rpc.flamingfir', 'Flaming Fir (Substrate Testnet, hosted by Parity)', { ns: 'apps-config' }),
       value: 'wss://substrate-rpc.parity.io'
+    },
+    {
+      info: 'nodle',
+      text: t<string>('rpc.arcadia', 'Arcadia (Nodle Testnet, hosted by Nodle)', { ns: 'apps-config' }),
+      value: 'wss://arcadia1.nodleprotocol.io'
+    },
+    {
+      info: 'kilt',
+      text: t<string>('rpc.kilt', 'KILT Devnet (KILT Canary, hosted by KILT Protocol)', { ns: 'apps-config' }),
+      value: 'wss://full-nodes-lb.devnet.kilt.io:9944/'
     },
     {
       info: 'datahighway',
