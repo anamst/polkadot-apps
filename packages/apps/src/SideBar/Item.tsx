@@ -3,7 +3,6 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 import { ApiProps } from '@polkadot/react-api/types';
-import { I18nProps } from '@polkadot/react-components/types';
 import { Route } from '@polkadot/apps-routing/types';
 import { AccountId } from '@polkadot/types/interfaces';
 
@@ -14,17 +13,15 @@ import { Badge, Icon, Menu, Tooltip } from '@polkadot/react-components';
 import { useAccounts, useApi, useCall } from '@polkadot/react-hooks';
 import { isFunction } from '@polkadot/util';
 
-import translate from '../translate';
+const DUMMY_COUNTER = (): null => null;
 
-const DUMMY_COUNTER = (): number => 0;
-
-interface Props extends I18nProps {
+interface Props {
   isCollapsed: boolean;
   onClick: () => void;
   route: Route;
 }
 
-const disabledLog: Map<string, string> = new Map();
+const disabledLog = new Map<string, string>();
 const TOOLTIP_OFFSET = { right: -4 };
 
 function logDisabled (route: string, message: string): void {
@@ -39,13 +36,14 @@ function hasEndpoint (api: ApiPromise, endpoint: string): boolean {
   const [area, section, method] = endpoint.split('.');
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return isFunction((api as any)[area][section][method]);
   } catch (error) {
     return false;
   }
 }
 
-function checkVisible (name: string, { api, isApiReady, isApiConnected }: ApiProps, hasAccounts: boolean, hasSudo: boolean, { isHidden, needsAccounts, needsApi, needsSudo }: Route['display']): boolean {
+function checkVisible (name: string, { api, isApiConnected, isApiReady }: ApiProps, hasAccounts: boolean, hasSudo: boolean, { isHidden, needsAccounts, needsApi, needsSudo }: Route['display']): boolean {
   if (isHidden) {
     return false;
   } else if (needsAccounts && !hasAccounts) {
@@ -56,6 +54,7 @@ function checkVisible (name: string, { api, isApiReady, isApiConnected }: ApiPro
     return false;
   } else if (needsSudo && !hasSudo) {
     logDisabled(name, 'Sudo key not available');
+
     return false;
   }
 
@@ -68,43 +67,52 @@ function checkVisible (name: string, { api, isApiReady, isApiConnected }: ApiPro
   });
 
   if (notFound.length !== 0) {
-    logDisabled(name, `API not available: ${notFound}`);
+    logDisabled(name, `API not available: ${notFound.toString()}`);
   }
 
   return notFound.length === 0;
 }
 
-function Item ({ route: { Modal, useCounter = DUMMY_COUNTER, display, i18n, icon, name }, t, isCollapsed, onClick }: Props): React.ReactElement<Props> | null {
+function Item ({ isCollapsed, onClick, route }: Props): React.ReactElement<Props> | null {
   const { allAccounts, hasAccounts } = useAccounts();
   const apiProps = useApi();
-  const sudoKey = useCall<AccountId>(apiProps.isApiReady ? apiProps.api.query.sudo?.key : undefined, []);
+  const sudoKey = useCall<AccountId>(apiProps.isApiReady && apiProps.api.query.sudo?.key, []);
   const [hasSudo, setHasSudo] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const count = useCounter();
+  const count = (route.useCounter || DUMMY_COUNTER)();
 
   useEffect((): void => {
     setHasSudo(!!sudoKey && allAccounts.some((address): boolean => sudoKey.eq(address)));
   }, [allAccounts, sudoKey]);
 
   useEffect((): void => {
-    setIsVisible(checkVisible(name, apiProps, hasAccounts, hasSudo, display));
-  }, [apiProps, hasAccounts, hasSudo]);
+    const isVisible = checkVisible(route.name, apiProps, hasAccounts, hasSudo, route.display);
+
+    route.isIgnored = !isVisible;
+    setIsVisible(isVisible);
+  }, [apiProps, hasAccounts, hasSudo, route]);
 
   if (!isVisible) {
     return null;
   }
 
+  const { Modal, icon, name, text } = route;
+
   const body = (
     <>
       <Icon name={icon} />
-      <span className='text'>{t(`sidebar.${name}`, i18n)}</span>
-      {count !== 0 && (
-        <Badge isInline info={count} type='counter' />
+      <span className='text'>{text}</span>
+      {!!count && (
+        <Badge
+          info={count}
+          isInline
+          type='counter'
+        />
       )}
       <Tooltip
         offset={TOOLTIP_OFFSET}
         place='right'
-        text={t(`sidebar.${name}`, i18n)}
+        text={text}
         trigger={`nav-${name}`}
       />
     </>
@@ -126,7 +134,7 @@ function Item ({ route: { Modal, useCounter = DUMMY_COUNTER, display, i18n, icon
         )
         : (
           <NavLink
-            activeClassName='apps--SideBar-Item-NavLink-active'
+            activeClassName='apps--SideBar-Item-NavLink-active ui--highlight--border'
             className='apps--SideBar-Item-NavLink'
             data-for={`nav-${name}`}
             data-tip
@@ -142,4 +150,4 @@ function Item ({ route: { Modal, useCounter = DUMMY_COUNTER, display, i18n, icon
   );
 }
 
-export default translate(Item);
+export default React.memo(Item);

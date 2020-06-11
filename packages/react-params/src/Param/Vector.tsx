@@ -2,20 +2,17 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { WithTranslation } from 'react-i18next';
 import { TypeDef } from '@polkadot/types/types';
-import { ParamDef, Props as BareProps, RawParam } from '../types';
+import { ParamDef, Props, RawParam } from '../types';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@polkadot/react-components';
 import { isUndefined } from '@polkadot/util';
 
-import translate from '../translate';
+import { useTranslation } from '../translate';
 import getInitValue from '../initValue';
 import Params from '../';
 import Base from './Base';
-
-interface Props extends BareProps, WithTranslation {}
 
 function generateParam (type: TypeDef, index: number): ParamDef {
   return {
@@ -24,7 +21,8 @@ function generateParam (type: TypeDef, index: number): ParamDef {
   };
 }
 
-function Vector ({ className, defaultValue, isDisabled = false, label, onChange, style, t, type, withLabel }: Props): React.ReactElement<Props> | null {
+function Vector ({ className = '', defaultValue, isDisabled = false, label, onChange, overrides, type, withLabel }: Props): React.ReactElement<Props> | null {
+  const { t } = useTranslation();
   const [count, setCount] = useState(0);
   const [params, setParams] = useState<ParamDef[]>([]);
   const [values, setValues] = useState<RawParam[]>([]);
@@ -60,7 +58,7 @@ function Vector ({ className, defaultValue, isDisabled = false, label, onChange,
       const params: ParamDef[] = [];
       const values: RawParam[] = [];
 
-      (defaultValue.value || []).forEach((value: RawParam, index: number): void => {
+      (defaultValue.value as RawParam[] || []).forEach((value: RawParam, index: number): void => {
         values.push(
           isUndefined(value) || isUndefined(value.isValid)
             ? { isValid: !isUndefined(value), value }
@@ -80,39 +78,45 @@ function Vector ({ className, defaultValue, isDisabled = false, label, onChange,
       isValid: values.reduce((result: boolean, { isValid }): boolean => result && isValid, true),
       value: values.map(({ value }): any => value)
     });
-  }, [values]);
+  }, [values, onChange]);
 
-  const _rowAdd = (): void => setCount(count + 1);
-  const _rowRemove = (): void => setCount(count - 1);
+  const _rowAdd = useCallback(
+    (): void => setCount((count) => count + 1),
+    []
+  );
+  const _rowRemove = useCallback(
+    (): void => setCount((count) => count - 1),
+    []
+  );
 
   return (
     <Base
       className={className}
       isOuter
       label={label}
-      style={style}
       withLabel={withLabel}
     >
       {!isDisabled && (
         <div className='ui--Param-Vector-buttons'>
           <Button
-            isPrimary
-            onClick={_rowAdd}
-            label={t('Add item')}
             icon='add'
+            isPrimary
+            label={t<string>('Add item')}
+            onClick={_rowAdd}
           />
           <Button
+            icon='minus'
             isDisabled={values.length === 0}
             isNegative
+            label={t<string>('Remove item')}
             onClick={_rowRemove}
-            label={t('Remove item')}
-            icon='minus'
           />
         </div>
       )}
       <Params
         isDisabled={isDisabled}
         onChange={setValues}
+        overrides={overrides}
         params={params}
         values={values}
       />
@@ -120,4 +124,4 @@ function Vector ({ className, defaultValue, isDisabled = false, label, onChange,
   );
 }
 
-export default translate(Vector);
+export default React.memo(Vector);

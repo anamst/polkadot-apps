@@ -2,8 +2,7 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { DerivedBalances, DerivedFees } from '@polkadot/api-derive/types';
-import { I18nProps } from '@polkadot/react-components/types';
+import { DeriveBalancesAll, DeriveFees } from '@polkadot/api-derive/types';
 import { AccountId } from '@polkadot/types/interfaces';
 import { ExtraFees } from './types';
 
@@ -12,13 +11,13 @@ import React, { useEffect, useState } from 'react';
 import { Compact, UInt } from '@polkadot/types';
 import { Icon } from '@polkadot/react-components';
 import { useApi, useCall } from '@polkadot/react-hooks';
-import { formatBalance } from '@polkadot/util';
+import { BN_ZERO, formatBalance } from '@polkadot/util';
 
-import translate from '../translate';
+import { useTranslation } from '../translate';
 
-interface Props extends I18nProps {
+interface Props {
   amount: BN | Compact<UInt>;
-  fees: DerivedFees;
+  fees: DeriveFees;
   recipientId: string | AccountId;
   onChange: (fees: ExtraFees) => void;
 }
@@ -28,12 +27,13 @@ interface State extends ExtraFees {
   isNoEffect: boolean;
 }
 
-export function Transfer ({ amount, fees, onChange, recipientId, t }: Props): React.ReactElement<Props> {
+function Transfer ({ amount, fees, onChange, recipientId }: Props): React.ReactElement<Props> {
+  const { t } = useTranslation();
   const { api } = useApi();
-  const allBalances = useCall<DerivedBalances>(api.derive.balances.all as any, [recipientId]);
+  const allBalances = useCall<DeriveBalancesAll>(api.derive.balances.all, [recipientId]);
   const [{ isCreation, isNoEffect }, setState] = useState<State>({
-    extraFees: new BN(0),
-    extraAmount: new BN(0),
+    extraAmount: BN_ZERO,
+    extraFees: BN_ZERO,
     extraWarn: false,
     isCreation: false,
     isNoEffect: false
@@ -61,14 +61,14 @@ export function Transfer ({ amount, fees, onChange, recipientId, t }: Props): Re
         isNoEffect
       });
     }
-  }, [amount, allBalances, fees]);
+  }, [amount, allBalances, fees, onChange]);
 
   return (
     <>
       {isNoEffect && (
         <div>
           <Icon name='warning sign' />
-          {t('The final recipient balance is less or equal to {{existentialDeposit}} (the existential amount) and will not be reflected', {
+          {t<string>('The final recipient balance is less or equal to {{existentialDeposit}} (the existential amount) and will not be reflected', {
             replace: {
               existentialDeposit: formatBalance(fees.existentialDeposit)
             }
@@ -78,7 +78,7 @@ export function Transfer ({ amount, fees, onChange, recipientId, t }: Props): Re
       {isCreation && (
         <div>
           <Icon name='warning sign' />
-          {t('A fee of {{creationFee}} will be deducted from the sender since the destination account does not exist', {
+          {t<string>('A fee of {{creationFee}} will be deducted from the sender since the destination account does not exist', {
             replace: {
               creationFee: formatBalance(fees.creationFee)
             }
@@ -89,4 +89,4 @@ export function Transfer ({ amount, fees, onChange, recipientId, t }: Props): Re
   );
 }
 
-export default translate(Transfer);
+export default React.memo(Transfer);

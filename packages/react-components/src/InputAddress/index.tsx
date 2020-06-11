@@ -13,7 +13,7 @@ import { withMulti, withObservable } from '@polkadot/react-api/hoc';
 import keyring from '@polkadot/ui-keyring';
 import keyringOption from '@polkadot/ui-keyring/options';
 import createKeyringItem from '@polkadot/ui-keyring/options/item';
-import { isUndefined } from '@polkadot/util';
+import { isNull, isUndefined } from '@polkadot/util';
 
 import { classes, getAddressName } from '../util';
 import addressToAddress from '../util/toAddress';
@@ -23,6 +23,7 @@ import createItem from './createItem';
 
 interface Props extends BareProps {
   defaultValue?: Uint8Array | string | null;
+  filter?: string[];
   help?: React.ReactNode;
   hideAddress?: boolean;
   isDisabled?: boolean;
@@ -48,6 +49,7 @@ type ExportedType = React.ComponentType<Props> & {
 };
 
 interface State {
+  lastValue?: string;
   value?: string | string[];
 }
 
@@ -55,7 +57,7 @@ const STORAGE_KEY = 'options:InputAddress';
 const DEFAULT_TYPE = 'all';
 const MULTI_DEFAULT: string[] = [];
 
-function transformToAddress (value: string | Uint8Array): string | null {
+function transformToAddress (value?: string | Uint8Array | null): string | null {
   try {
     return addressToAddress(value) || null;
   } catch (error) {
@@ -98,11 +100,11 @@ function createOption (address: string): Option {
   return createItem(createKeyringItem(address, name), !isRecent);
 }
 
-function readOptions (): Record<string, any> {
-  return store.get(STORAGE_KEY) || { defaults: {} };
+function readOptions (): Record<string, Record<string, string>> {
+  return store.get(STORAGE_KEY) as Record<string, Record<string, string>> || { defaults: {} };
 }
 
-function getLastValue (type: KeyringOption$Type = DEFAULT_TYPE): any {
+function getLastValue (type: KeyringOption$Type = DEFAULT_TYPE): string {
   const options = readOptions();
 
   return options.defaults[type];
@@ -131,7 +133,7 @@ class InputAddress extends React.PureComponent<Props, State> {
   }
 
   public render (): React.ReactNode {
-    const { className, defaultValue, help, hideAddress = false, isDisabled = false, isError, isMultiple, label, labelExtra, options, optionsAll, placeholder, type = DEFAULT_TYPE, style, withEllipsis, withLabel } = this.props;
+    const { className = '', defaultValue, help, hideAddress = false, isDisabled = false, isError, isMultiple, label, labelExtra, options, optionsAll, placeholder, type = DEFAULT_TYPE, withEllipsis, withLabel } = this.props;
     const { value } = this.state;
     const hasOptions = (options && options.length !== 0) || (optionsAll && Object.keys(optionsAll[type]).length !== 0);
 
@@ -139,26 +141,20 @@ class InputAddress extends React.PureComponent<Props, State> {
       return null;
     }
 
-    const lastValue = getLastValue(type);
+    const lastValue = this.getLastValue();
     const lastOption = this.getLastOptionValue();
     const actualValue = transformToAddress(
       isDisabled || (defaultValue && this.hasValue(defaultValue))
         ? defaultValue
-        : (
-          this.hasValue(lastValue)
-            ? lastValue
-            : (lastOption && lastOption.value)
-        )
+        : this.hasValue(lastValue)
+          ? lastValue
+          : (lastOption && lastOption.value)
     );
     const actualOptions: Option[] = options
       ? options.map((o): Option => createItem(o))
-      : (
-        isDisabled && actualValue
-          ? [createOption(actualValue)]
-          : optionsAll
-            ? optionsAll[type]
-            : []
-      );
+      : isDisabled && actualValue
+        ? [createOption(actualValue)]
+        : this.getFiltered();
     const _defaultValue = (isMultiple || !isUndefined(value))
       ? undefined
       : actualValue;
@@ -186,7 +182,6 @@ class InputAddress extends React.PureComponent<Props, State> {
             ? this.renderLabel
             : undefined
         }
-        style={style}
         value={
           isMultiple && !value
             ? MULTI_DEFAULT
@@ -207,27 +202,23 @@ class InputAddress extends React.PureComponent<Props, State> {
   }
 
   private getLastOptionValue (): KeyringSectionOption | undefined {
-    const { optionsAll, type = DEFAULT_TYPE } = this.props;
-
-    if (!optionsAll) {
-      return;
-    }
-
-    const available = optionsAll[type].filter(({ value }): boolean => !!value);
+    const available = this.getFiltered();
 
     return available.length
       ? available[available.length - 1]
       : undefined;
   }
 
-  private hasValue (test?: Uint8Array | string): boolean {
-    const { optionsAll, type = DEFAULT_TYPE } = this.props;
+  private hasValue (test?: Uint8Array | string | null): boolean {
+    return this.getFiltered().some(({ value }) => test === value);
+  }
 
-    if (!optionsAll) {
-      return false;
-    }
+  private getFiltered (): Option[] {
+    const { filter, optionsAll, type = DEFAULT_TYPE } = this.props;
 
-    return !!optionsAll[type].find(({ value }): boolean => test === value);
+    return !optionsAll
+      ? []
+      : optionsAll[type].filter(({ value }) => !filter || (!!value && filter.includes(value)));
   }
 
   private onChange = (address: string): void => {
@@ -250,22 +241,33 @@ class InputAddress extends React.PureComponent<Props, State> {
     }
   }
 
+  private getLastValue (): string {
+    const { type } = this.props;
+    const { lastValue: stateLast } = this.state;
+
+    if (stateLast) {
+      return stateLast;
+    }
+
+    const lastValue = getLastValue(type);
+
+    this.setState({ lastValue });
+
+    return lastValue;
+  }
+
   private onSearch = (filteredOptions: KeyringSectionOptions, _query: string): KeyringSectionOptions => {
     const { isInput = true } = this.props;
     const query = _query.trim();
     const queryLower = query.toLowerCase();
     const matches = filteredOptions.filter((item): boolean =>
-      item.value !== null && (
+      !!item.value && (
         (item.name.toLowerCase && item.name.toLowerCase().includes(queryLower)) ||
         item.value.toLowerCase().includes(queryLower)
       )
     );
 
-    const valueMatches = matches.filter((item): boolean =>
-      item.value !== null
-    );
-
-    if (isInput && valueMatches.length === 0) {
+    if (isInput && matches.length === 0) {
       const accountId = transformToAccountId(query);
 
       if (accountId) {
@@ -282,7 +284,7 @@ class InputAddress extends React.PureComponent<Props, State> {
       const nextItem = matches[index + 1];
       const hasNext = nextItem && nextItem.value;
 
-      return item.value !== null || (!isLast && !!hasNext);
+      return !(isNull(item.value) || isUndefined(item.value)) || (!isLast && !!hasNext);
     });
   }
 }
@@ -299,11 +301,16 @@ const ExportedComponent = withMulti(
 
     .ui.search.selection.dropdown {
       > .text > .ui--KeyPair {
-        .ui--IdentityIcon {
+        .ui--IdentityIcon-Outer {
           border: 1px solid #888;
           border-radius: 50%;
           left: -2.75rem;
-          top: -1.2rem;
+          top: -1.05rem;
+
+          svg {
+            height: 32px;
+            width: 32px;
+          }
         }
 
         .name {
@@ -319,9 +326,9 @@ const ExportedComponent = withMulti(
   `,
   withObservable(keyringOption.optionsSubject, {
     propName: 'optionsAll',
-    transform: (optionsAll: KeyringOptions): Record<string, Option[]> =>
-      Object.entries(optionsAll).reduce((result: Record<string, Option[]>, [type, options]): Record<string, Option[]> => {
-        result[type] = options.map((option): Option =>
+    transform: (optionsAll: KeyringOptions): Record<string, (Option | React.ReactNode)[]> =>
+      Object.entries(optionsAll).reduce((result: Record<string, (Option | React.ReactNode)[]>, [type, options]): Record<string, (Option | React.ReactNode)[]> => {
+        result[type] = options.map((option): Option | React.ReactNode =>
           option.value === null
             ? createHeader(option)
             : createItem(option)

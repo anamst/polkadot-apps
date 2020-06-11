@@ -5,11 +5,11 @@
 import { BareProps, BitLength } from './types';
 
 import BN from 'bn.js';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { BitLengthOption } from '@polkadot/react-components/constants';
-import { InputNumber } from '@polkadot/react-components';
-import { formatBalance } from '@polkadot/util';
+import { BN_TEN, BN_THOUSAND, formatBalance, isBn } from '@polkadot/util';
+import InputNumber from './InputNumber';
 
 interface Props extends BareProps {
   autoFocus?: boolean;
@@ -17,6 +17,7 @@ interface Props extends BareProps {
   help?: React.ReactNode;
   isDisabled?: boolean;
   isError?: boolean;
+  isFull?: boolean;
   isZeroable?: boolean;
   label?: React.ReactNode;
   labelExtra?: React.ReactNode;
@@ -25,7 +26,7 @@ interface Props extends BareProps {
   onEnter?: () => void;
   onEscape?: () => void;
   placeholder?: string;
-  value?: BN | string;
+  value?: BN;
   withEllipsis?: boolean;
   withLabel?: boolean;
   withMax?: boolean;
@@ -33,22 +34,47 @@ interface Props extends BareProps {
 
 const DEFAULT_BITLENGTH = BitLengthOption.CHAIN_SPEC as BitLength;
 
-function InputBalance ({ autoFocus, className, defaultValue: inDefault, help, isDisabled, isError, isZeroable, label, labelExtra, maxValue, onChange, onEnter, onEscape, placeholder, style, value, withEllipsis, withLabel, withMax }: Props): React.ReactElement<Props> {
-  const defaultValue = inDefault
-    ? formatBalance(inDefault, { forceUnit: '-', withSi: false }).replace(',', isDisabled ? ',' : '')
-    : inDefault;
+function reformat (value: string | BN, isDisabled?: boolean): string {
+  if (isBn(value)) {
+    let fmt = (value.mul(BN_THOUSAND).div(BN_TEN.pow(new BN(formatBalance.getDefaults().decimals))).toNumber() / 1000).toFixed(3);
+
+    while (fmt.length !== 1 && ['.', '0'].includes(fmt[fmt.length - 1])) {
+      const isLast = fmt.endsWith('.');
+
+      fmt = fmt.substr(0, fmt.length - 1);
+
+      if (isLast) {
+        break;
+      }
+    }
+
+    return fmt;
+  }
+
+  return formatBalance(value, { forceUnit: '-', withSi: false }).replace(',', isDisabled ? ',' : '');
+}
+
+function InputBalance ({ autoFocus, className = '', defaultValue: inDefault, help, isDisabled, isError, isFull, isZeroable, label, labelExtra, maxValue, onChange, onEnter, onEscape, placeholder, value, withEllipsis, withLabel, withMax }: Props): React.ReactElement<Props> {
+  const [defaultValue, setDefaultValue] = useState<string | undefined>();
+
+  useEffect((): void => {
+    inDefault && setDefaultValue(
+      reformat(inDefault, isDisabled)
+    );
+  }, [inDefault, isDisabled]);
 
   return (
     <InputNumber
       autoFocus={autoFocus}
-      className={`ui--InputBalance ${className}`}
       bitLength={DEFAULT_BITLENGTH}
+      className={`ui--InputBalance ${className}`}
       defaultValue={defaultValue}
       help={help}
       isDisabled={isDisabled}
       isError={isError}
-      isZeroable={isZeroable}
+      isFull={isFull}
       isSi
+      isZeroable={isZeroable}
       label={label}
       labelExtra={labelExtra}
       maxValue={maxValue}
@@ -56,7 +82,6 @@ function InputBalance ({ autoFocus, className, defaultValue: inDefault, help, is
       onEnter={onEnter}
       onEscape={onEscape}
       placeholder={placeholder}
-      style={style}
       value={value}
       withEllipsis={withEllipsis}
       withLabel={withLabel}
@@ -65,7 +90,7 @@ function InputBalance ({ autoFocus, className, defaultValue: inDefault, help, is
   );
 }
 
-export default styled(InputBalance)`
+export default React.memo(styled(InputBalance)`
   &&:not(.label-small) .labelExtra {
     right: 6.5rem;
   }
@@ -74,4 +99,4 @@ export default styled(InputBalance)`
     border-style: solid;
     opacity: 1 !important;
   }
-`;
+`);

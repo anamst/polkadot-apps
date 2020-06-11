@@ -2,24 +2,26 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { I18nProps, BareProps } from '@polkadot/react-components/types';
+import { BareProps } from '@polkadot/react-components/types';
 
 import React from 'react';
 import styled from 'styled-components';
 import { QrDisplayPayload, QrScanSignature } from '@polkadot/react-qr';
 
-import translate from './translate';
-
-interface Props extends I18nProps, BareProps {
+interface Props extends BareProps {
   address: string;
+  className?: string;
+  genesisHash: Uint8Array;
+  isHashed: boolean;
   isScanning: boolean;
   onSignature: (signature: { signature: string }) => void;
   payload: Uint8Array;
 }
 
+const CMD_HASH = 1;
 const CMD_MORTAL = 2;
 
-function Qr ({ address, className, isScanning, onSignature, payload }: Props): React.ReactElement<Props> {
+function Qr ({ address, className = '', genesisHash, isHashed, isScanning, onSignature, payload }: Props): React.ReactElement<Props> {
   return (
     <div className={className}>
       {
@@ -27,7 +29,12 @@ function Qr ({ address, className, isScanning, onSignature, payload }: Props): R
           ? <QrScanSignature onScan={onSignature} />
           : <QrDisplayPayload
             address={address}
-            cmd={CMD_MORTAL}
+            cmd={
+              isHashed
+                ? CMD_HASH
+                : CMD_MORTAL
+            }
+            genesisHash={genesisHash}
             payload={payload}
           />
       }
@@ -35,9 +42,7 @@ function Qr ({ address, className, isScanning, onSignature, payload }: Props): R
   );
 }
 
-export default translate(
-  styled(Qr)`
-    margin: 0 auto;
-    max-width: 30rem;
-  `
-);
+export default React.memo(styled(Qr)`
+  margin: 0 auto;
+  max-width: 30rem;
+`);

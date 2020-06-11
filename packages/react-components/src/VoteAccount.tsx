@@ -2,23 +2,26 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { I18nProps } from './types';
-
 import React from 'react';
 
 import InputAddress from './InputAddress';
-import translate from './translate';
+import { useTranslation } from './translate';
 
-interface Props extends I18nProps {
+interface Props {
+  className?: string;
+  filter?: string[];
   onChange: (value: string | null) => void;
 }
 
-function VoteAccount ({ className, onChange, t }: Props): React.ReactElement<Props> {
+function VoteAccount ({ className = '', filter, onChange }: Props): React.ReactElement<Props> {
+  const { t } = useTranslation();
+
   return (
     <InputAddress
       className={className}
-      help={t('Select the account you wish to vote with. You can approve "aye" or deny "nay" the proposal.')}
-      label={t('vote with account')}
+      filter={filter}
+      help={t<string>('Select the account you wish to vote with. You can approve "aye" or deny "nay" the proposal.')}
+      label={t<string>('vote with account')}
       onChange={onChange}
       type='account'
       withLabel
@@ -26,4 +29,4 @@ function VoteAccount ({ className, onChange, t }: Props): React.ReactElement<Pro
   );
 }
 
-export default translate(VoteAccount);
+export default React.memo(VoteAccount);
