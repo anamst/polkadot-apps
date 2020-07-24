@@ -8,7 +8,7 @@ import encointerNode from './encointer-node';
 import kulupu from './kulupu';
 import nodeTemplate from './node-template';
 import kilt from './kilt-chain';
-import mutliCurrencyNode from './mutli-currency-node';
+import polimecNode from './polimec-node';
 
 export default {
   'centrifuge-chain': centrifugeChain,
@@ -17,5 +17,5 @@ export default {
   kulupu,
   'mashnet-node': kilt,
   'node-template': nodeTemplate,
-  'mutli-currency-node': mutliCurrencyNode
+  'polimec-node': polimecNode
 };
