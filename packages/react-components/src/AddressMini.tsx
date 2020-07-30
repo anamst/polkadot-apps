@@ -3,7 +3,6 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 import { AccountId, AccountIndex, Address } from '@polkadot/types/interfaces';
-import { BareProps } from './types';
 
 import BN from 'bn.js';
 import React from 'react';
@@ -17,42 +16,42 @@ import BondedDisplay from './Bonded';
 import IdentityIcon from './IdentityIcon';
 import LockedVote from './LockedVote';
 
-interface Props extends BareProps {
+interface Props {
   balance?: BN | BN[];
   bonded?: BN | BN[];
   children?: React.ReactNode;
+  className?: string;
   iconInfo?: React.ReactNode;
+  isHighlight?: boolean;
   isPadded?: boolean;
   isShort?: boolean;
   label?: React.ReactNode;
+  labelBalance?: React.ReactNode;
+  noLookup?: boolean;
+  summary?: React.ReactNode;
   type?: KeyringItemType;
   value?: AccountId | AccountIndex | Address | string | null | Uint8Array;
   withAddress?: boolean;
   withBalance?: boolean;
   withBonded?: boolean;
   withLockedVote?: boolean;
+  withSidebar?: boolean;
   withName?: boolean;
   withShrink?: boolean;
 }
 
-function AddressMini ({ balance, bonded, children, className, iconInfo, isPadded = true, label, style, value, withAddress = true, withBalance = false, withBonded = false, withLockedVote = false, withName = true, withShrink = false }: Props): React.ReactElement<Props> | null {
+function AddressMini ({ balance, bonded, children, className = '', iconInfo, isHighlight, isPadded = true, label, labelBalance, noLookup, summary, value, withAddress = true, withBalance = false, withBonded = false, withLockedVote = false, withName = true, withShrink = false, withSidebar = true }: Props): React.ReactElement<Props> | null {
   if (!value) {
     return null;
   }
 
   return (
-    <div
-      className={classes('ui--AddressMini', isPadded ? 'padded' : '', withShrink ? 'withShrink' : '', className)}
-      style={style}
-    >
+    <div className={classes('ui--AddressMini', isHighlight ? 'isHighlight' : '', isPadded ? 'padded' : '', withShrink ? 'withShrink' : '', className)}>
       {label && (
         <label className='ui--AddressMini-label'>{label}</label>
       )}
       <div className='ui--AddressMini-icon'>
-        <IdentityIcon
-          size={24}
-          value={value as Uint8Array}
-        />
+        <IdentityIcon value={value as Uint8Array} />
         {iconInfo && (
           <div className='ui--AddressMini-icon-info'>
             {iconInfo}
@@ -63,7 +62,13 @@ function AddressMini ({ balance, bonded, children, className, iconInfo, isPadded
         {withAddress && (
           <div className='ui--AddressMini-address'>
             {withName
-              ? <AccountName value={value} />
+              ? (
+                <AccountName
+                  noLookup={noLookup}
+                  value={value}
+                  withSidebar={withSidebar}
+                />
+              )
               : toShortAddress(value)
             }
           </div>
@@ -74,6 +79,7 @@ function AddressMini ({ balance, bonded, children, className, iconInfo, isPadded
         {withBalance && (
           <BalanceDisplay
             balance={balance}
+            label={labelBalance}
             params={value}
           />
         )}
@@ -87,12 +93,15 @@ function AddressMini ({ balance, bonded, children, className, iconInfo, isPadded
         {withLockedVote && (
           <LockedVote params={value} />
         )}
+        {summary && (
+          <div className='ui--AddressMini-summary'>{summary}</div>
+        )}
       </div>
     </div>
   );
 }
 
-export default styled(AddressMini)`
+export default React.memo(styled(AddressMini)`
   display: inline-block;
   padding: 0 0.25rem 0 1rem;
   text-align: left;
@@ -100,7 +109,7 @@ export default styled(AddressMini)`
 
   &.padded {
     display: inline-block;
-    padding: 0.25rem 1rem 0 0;
+    padding: 0 1rem 0 0;
   }
 
   &.summary {
@@ -108,12 +117,47 @@ export default styled(AddressMini)`
     top: -0.2rem;
   }
 
+  .ui--AddressMini-info {
+    max-width: 12rem;
+    min-width: 12rem;
+
+    @media only screen and (max-width: 1800px) {
+      max-width: 11.5rem;
+      min-width: 11.5rem;
+    }
+
+    @media only screen and (max-width: 1700px) {
+      max-width: 11rem;
+      min-width: 11rem;
+    }
+
+    @media only screen and (max-width: 1600px) {
+      max-width: 10.5rem;
+      min-width: 10.5rem;
+    }
+
+    @media only screen and (max-width: 1500px) {
+      max-width: 10rem;
+      min-width: 10rem;
+    }
+
+    @media only screen and (max-width: 1400px) {
+      max-width: 9.5rem;
+      min-width: 9.5rem;
+    }
+
+    @media only screen and (max-width: 1300px) {
+      max-width: 9rem;
+      min-width: 9rem;
+    }
+  }
+
   .ui--AddressMini-address {
-    max-width: 9rem;
-    min-width: 9rem;
     overflow: hidden;
     text-align: left;
     text-overflow: ellipsis;
+    width: fit-content;
+    max-width: inherit;
 
     > div {
       overflow: hidden;
@@ -166,4 +210,12 @@ export default styled(AddressMini)`
     position: relative;
     vertical-align: middle;
   }
-`;
+
+  .ui--AddressMini-summary {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    margin-left: 2.25rem;
+    margin-top: -0.2rem;
+    text-align: left;
+  }
+`);

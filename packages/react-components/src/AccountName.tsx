@@ -2,288 +2,213 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { DeriveAccountInfo } from '@polkadot/api-derive/types';
-import { BareProps } from '@polkadot/react-api/types';
-import { AccountId, AccountIndex, Address, RegistrarInfo } from '@polkadot/types/interfaces';
+import { IconName } from '@fortawesome/fontawesome-svg-core';
+import { DeriveAccountInfo, DeriveAccountRegistration } from '@polkadot/api-derive/types';
+import { AccountId, AccountIndex, Address } from '@polkadot/types/interfaces';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useCall, useAccounts, useApi, useToggle } from '@polkadot/react-hooks';
-import { Option } from '@polkadot/types';
+import registry from '@polkadot/react-api/typeRegistry';
+import { AccountSidebarToggle } from '@polkadot/app-accounts/Sidebar';
+import { useCall, useApi } from '@polkadot/react-hooks';
+import { isFunction, stringToU8a } from '@polkadot/util';
 
-import { useTranslation } from './translate';
 import { getAddressName } from './util';
 import Badge from './Badge';
-import Button from './Button';
-import Dropdown from './Dropdown';
-import Icon from './Icon';
-import Input from './Input';
-import InputAddress from './InputAddress';
-import Modal from './Modal';
-import TxButton from './TxButton';
 
-interface Props extends BareProps {
+interface Props {
   children?: React.ReactNode;
+  className?: string;
   defaultName?: string;
   label?: React.ReactNode;
+  noLookup?: boolean;
   onClick?: () => void;
   override?: React.ReactNode;
-  toggle?: any;
-  value?: AccountId | AccountIndex | Address | string | null | Uint8Array;
-  withShort?: boolean;
+  // this is used by app-account/addresses to toggle editing
+  toggle?: boolean;
+  value: AccountId | AccountIndex | Address | string | Uint8Array | null | undefined;
+  withSidebar?: boolean;
 }
 
-const nameCache: Map<string, [boolean, React.ReactNode]> = new Map();
+const KNOWN: [AccountId, string][] = [
+  [registry.createType('AccountId', stringToU8a('modlpy/socie'.padEnd(32, '\0'))), 'Society'],
+  [registry.createType('AccountId', stringToU8a('modlpy/trsry'.padEnd(32, '\0'))), 'Treasury']
+];
 
-function defaultOrAddr (defaultName = '', _address: AccountId | AccountIndex | Address | string | Uint8Array, _accountIndex?: AccountIndex | null): [React.ReactNode, boolean, boolean] {
-  const accountId = _address.toString();
-  const accountIndex = (_accountIndex || '').toString();
-  const [isAddressExtracted,, extracted] = getAddressName(accountId, null, defaultName);
-  const [isAddressCached, nameCached] = nameCache.get(accountId) || [false, null];
+const displayCache = new Map<string, React.ReactNode>();
+const indexCache = new Map<string, string>();
 
-  if (extracted && isAddressCached && !isAddressExtracted) {
-    // skip, default return
-  } else if (nameCached) {
-    return [nameCached, false, isAddressCached];
-  } else if (isAddressExtracted && accountIndex) {
-    nameCache.set(accountId, [true, accountIndex]);
+const parentCache = new Map<string, string>();
 
-    return [accountIndex, false, true];
+export function getParentAccount (value: string): string | undefined {
+  return parentCache.get(value);
+}
+
+function defaultOrAddr (defaultName = '', _address: AccountId | AccountIndex | Address | string | Uint8Array, _accountIndex?: AccountIndex | null): [React.ReactNode, boolean, boolean, boolean] {
+  const known = KNOWN.find(([known]) => known.eq(_address));
+
+  if (known) {
+    return [known[1], false, false, true];
   }
 
-  return [extracted, !isAddressExtracted, isAddressExtracted];
+  const accountId = _address.toString();
+
+  if (!accountId) {
+    return [defaultName, false, false, false];
+  }
+
+  const [isAddressExtracted,, extracted] = getAddressName(accountId, null, defaultName);
+  const accountIndex = (_accountIndex || '').toString() || indexCache.get(accountId);
+
+  if (isAddressExtracted && accountIndex) {
+    indexCache.set(accountId, accountIndex);
+
+    return [accountIndex, false, true, false];
+  }
+
+  return [extracted, !isAddressExtracted, isAddressExtracted, false];
 }
 
-function AccountName ({ children, className, defaultName, label, onClick, override, style, toggle, value, withShort }: Props): React.ReactElement<Props> {
-  const { t } = useTranslation();
-  const { api } = useApi();
-  const { allAccounts } = useAccounts();
-  const [isJudgementOpen, toggleJudgement] = useToggle();
-  const registrars = useCall<Option<RegistrarInfo>[]>(api.query.identity?.registrars, []);
-  const info = useCall<DeriveAccountInfo>(api.derive.accounts.info as any, [value]);
-  const [accountId, setAccountId] = useState<string | null>(null);
-  const [isRegistrar, setIsRegistrar] = useState(false);
-  const [judgementAccountId, setJudgementAccountId] = useState<string | null>(null);
-  const [judgementEnum, setJudgementEnum] = useState(0);
-  const [registrarIndex, setRegistrarIndex] = useState(-1);
-  const address = useMemo((): string => (value || '').toString(), [value]);
+function extractName (address: string, accountIndex?: AccountIndex, defaultName?: string): React.ReactNode {
+  const displayCached = displayCache.get(address);
 
-  const _extractName = (accountId?: AccountId, accountIndex?: AccountIndex): React.ReactNode => {
-    const [name, isLocal, isAddress] = defaultOrAddr(defaultName, accountId || address, withShort ? null : accountIndex);
+  if (displayCached) {
+    return displayCached;
+  }
 
-    return (
-      <div className='via-identity'>
-        <span className={`name ${isLocal ? 'isLocal' : (isAddress ? 'isAddress' : '')}`}>{name}</span>
-      </div>
-    );
-  };
-
-  const [name, setName] = useState<React.ReactNode>((): React.ReactNode => _extractName());
-
-  // determine if we have a registrar or not - registrars are allowed to approve
-  useEffect((): void => {
-    if (allAccounts && registrars) {
-      setIsRegistrar(
-        registrars
-          .map((registrar): string| null =>
-            registrar.isSome
-              ? registrar.unwrap().account.toString()
-              : null
-          )
-          .some((regId): boolean => !!regId && allAccounts.includes(regId))
-      );
-    }
-  }, [allAccounts, registrars]);
-
-  // find the id of our registrar in the list
-  useEffect((): void => {
-    if (registrars && judgementAccountId) {
-      setRegistrarIndex(
-        registrars
-          .map((registrar): string| null =>
-            registrar.isSome
-              ? registrar.unwrap().account.toString()
-              : null
-          )
-          .indexOf(judgementAccountId)
-      );
-    } else {
-      setRegistrarIndex(-1);
-    }
-  }, [judgementAccountId, registrars]);
-
-  // set the actual nickname, localname, accountIndex, accountId
-  useEffect((): void => {
-    const { accountId, accountIndex, identity, nickname } = info || {};
-
-    if (accountId) {
-      setAccountId(accountId.toString());
-    }
-
-    if (api.query.identity?.identityOf) {
-      if (identity?.display) {
-        const isGood = identity.judgements.some(([, judgement]): boolean => judgement.isKnownGood || judgement.isReasonable);
-        const isBad = identity.judgements.some(([, judgement]): boolean => judgement.isErroneous || judgement.isLowQuality);
-
-        // FIXME This needs to be i18n, with plurals
-        const hover = (
-          <div>
-            <div>{`${identity.judgements.length ? identity.judgements.length : 'no'} judgement${identity.judgements.length === 1 ? '' : 's'}${identity.judgements.length ? ': ' : ''}${identity.judgements.map(([, judgement]): string => judgement.toString()).join(', ')}`}</div>
-            <table>
-              <tbody>
-                <tr>
-                  <td>{t('display')}</td>
-                  <td>{identity.display}</td>
-                </tr>
-                {identity.legal && (
-                  <tr>
-                    <td>{t('legal')}</td>
-                    <td>{identity.legal}</td>
-                  </tr>
-                )}
-                {identity.email && (
-                  <tr>
-                    <td>{t('email')}</td>
-                    <td>{identity.email}</td>
-                  </tr>
-                )}
-                {identity.web && (
-                  <tr>
-                    <td>{t('www')}</td>
-                    <td>{identity.web}</td>
-                  </tr>
-                )}
-                {identity.riot && (
-                  <tr>
-                    <td>{t('riot')}</td>
-                    <td>{identity.riot}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        );
-
-        const displayName = isGood
-          ? identity.display
-          : identity.display.replace(/[^\x20-\x7E]/g, '');
-
-        const name = (
-          <div className='via-identity'>
-            <Badge
-              hover={hover}
-              info={<Icon name={isGood ? 'check' : 'minus'} />}
-              isInline
-              isSmall
-              isTooltip
-              onClick={isRegistrar ? toggleJudgement : undefined}
-              type={
-                isGood
-                  ? 'green'
-                  : isBad
-                    ? 'brown'
-                    : 'gray'
-              }
-            />
-            <span className={`name ${isGood && 'isGood'}`}>{displayName}</span>
-          </div>
-        );
-
-        nameCache.set(address, [false, displayName]);
-        setName((): React.ReactNode => name);
-      } else {
-        setName((): React.ReactNode => _extractName(accountId, accountIndex));
-      }
-    } else if (nickname) {
-      nameCache.set(address, [false, nickname]);
-      setName(nickname);
-    } else {
-      setName(defaultOrAddr(defaultName, accountId || address, withShort ? null : accountIndex));
-    }
-  }, [info, toggle]);
+  const [displayName, isLocal, isAddress, isSpecial] = defaultOrAddr(defaultName, address, accountIndex);
 
   return (
-    <>
-      {isJudgementOpen && (
-        <Modal
-          header={t('Provide judgement')}
-          open
-          size='small'
-        >
-          <Modal.Content>
-            <InputAddress
-              label={t('registrar account')}
-              onChange={setJudgementAccountId}
-            />
-            <Input
-              isDisabled
-              label={t('registrar index')}
-              value={registrarIndex === -1 ? t('invalid/unknown registrar account') : registrarIndex}
-            />
-            <Dropdown
-              label={t('judgement')}
-              onChange={setJudgementEnum}
-              options={[
-                { value: 0, text: 'Unknown' },
-                { value: 1, text: 'Fee paid' },
-                { value: 2, text: 'Reasonable' },
-                { value: 3, text: 'Known good' },
-                { value: 4, text: 'Out of date' },
-                { value: 5, text: 'Low quality' }
-              ]}
-              value={judgementEnum}
-            />
-          </Modal.Content>
-          <Modal.Actions>
-            <Button.Group>
-              <Button
-                icon='cancel'
-                isNegative
-                label={t('Cancel')}
-                onClick={toggleJudgement}
-              />
-              <Button.Or />
-              <TxButton
-                accountId={judgementAccountId}
-                icon='check'
-                isDisabled={registrarIndex === -1}
-                label={t('Judge')}
-                onClick={toggleJudgement}
-                params={[registrarIndex, accountId, judgementEnum]}
-                tx='identity.provideJudgement'
-              />
-            </Button.Group>
-          </Modal.Actions>
-        </Modal>
+    <div className='via-identity'>
+      {isSpecial && (
+        <Badge
+          color='green'
+          icon='archway'
+          isSmall
+        />
       )}
-      <div
-        className={className}
-        onClick={
-          override
-            ? undefined
-            : onClick
-        }
-        style={style}
-      >
-        {label || ''}{override || name}{children}
-      </div>
-    </>
+      <span className={`name${(isLocal || isSpecial) ? ' isLocal' : (isAddress ? ' isAddress' : '')}`}>{displayName}</span>
+    </div>
   );
 }
 
-export default styled(AccountName)`
+function createIdElem (nameElem: React.ReactNode, color: 'green' | 'red' | 'gray', icon: IconName): React.ReactNode {
+  return (
+    <div className='via-identity'>
+      <Badge
+        color={color}
+        icon={icon}
+        isSmall
+      />
+      {nameElem}
+    </div>
+  );
+}
+
+function extractIdentity (address: string, identity: DeriveAccountRegistration): React.ReactNode {
+  const judgements = identity.judgements.filter(([, judgement]) => !judgement.isFeePaid);
+  const isGood = judgements.some(([, judgement]) => judgement.isKnownGood || judgement.isReasonable);
+  const isBad = judgements.some(([, judgement]) => judgement.isErroneous || judgement.isLowQuality);
+  const displayName = isGood
+    ? identity.display
+    : (identity.display || '').replace(/[^\x20-\x7E]/g, '');
+  const displayParent = identity.displayParent && (
+    isGood
+      ? identity.displayParent
+      : identity.displayParent.replace(/[^\x20-\x7E]/g, '')
+  );
+  const elem = createIdElem(
+    <span className={`name${isGood ? ' isGood' : ''}`}>
+      <span className='top'>{displayParent || displayName}</span>
+      {displayParent && <span className='sub'>{`/${displayName || ''}`}</span>}
+    </span>,
+    isGood ? 'green' : (isBad ? 'red' : 'gray'),
+    identity.parent ? 'link' : (isGood ? 'check' : 'minus')
+  );
+
+  displayCache.set(address, elem);
+
+  return elem;
+}
+
+function AccountName ({ children, className = '', defaultName, label, noLookup, onClick, override, toggle, value, withSidebar }: Props): React.ReactElement<Props> {
+  const { api } = useApi();
+  const info = useCall<DeriveAccountInfo>(!noLookup && api.derive.accounts.info, [value]);
+  const [name, setName] = useState<React.ReactNode>(() => extractName((value || '').toString(), undefined, defaultName));
+  const toggleSidebar = useContext(AccountSidebarToggle);
+
+  // set the actual nickname, local name, accountIndex, accountId
+  useEffect((): void => {
+    const { accountId, accountIndex, identity, nickname } = info || {};
+    const cacheAddr = (accountId || value || '').toString();
+
+    if (identity?.parent) {
+      parentCache.set(cacheAddr, identity.parent.toString());
+    }
+
+    if (isFunction(api.query.identity?.identityOf)) {
+      setName(() =>
+        identity?.display
+          ? extractIdentity(cacheAddr, identity)
+          : extractName(cacheAddr, accountIndex)
+      );
+    } else if (nickname) {
+      setName(nickname);
+    } else {
+      setName(defaultOrAddr(defaultName, cacheAddr, accountIndex));
+    }
+  }, [api, defaultName, info, toggle, value]);
+
+  const _onNameEdit = useCallback(
+    () => setName(defaultOrAddr(defaultName, (value || '').toString())),
+    [defaultName, value]
+  );
+
+  const _onToggleSidebar = useCallback(
+    () => toggleSidebar && value && toggleSidebar([value.toString(), _onNameEdit]),
+    [_onNameEdit, toggleSidebar, value]
+  );
+
+  return (
+    <div
+      className={`ui--AccountName${withSidebar ? ' withSidebar' : ''} ${className}`}
+      onClick={
+        withSidebar
+          ? _onToggleSidebar
+          : onClick
+      }
+    >
+      {label || ''}{override || name}{children}
+    </div>
+  );
+}
+
+export default React.memo(styled(AccountName)`
+  border: 1px dotted transparent;
+  vertical-align: middle;
+  white-space: nowrap;
+
+  &.withSidebar:hover {
+    border-bottom-color: #333;
+    cursor: help !important;
+  }
+
   .via-identity {
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    vertical-align: bottom;
+    align-items: end;
+    display: inline-flex;
     width: 100%;
 
     .name {
       font-weight: normal !important;
       filter: grayscale(100%);
+      line-height: 1;
       opacity: 0.6;
-      text-transform: uppercase;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:not(.isAddress) {
+        text-transform: uppercase;
+      }
 
       &.isAddress {
         font-family: monospace;
@@ -294,15 +219,16 @@ export default styled(AccountName)`
       &.isLocal {
         opacity: 1;
       }
-    }
 
-    > * {
-      line-height: 1em;
-      vertical-align: middle;
-    }
+      .sub,
+      .top {
+        vertical-align: middle;
+      }
 
-    .ui--Badge {
-      margin-top: -2px;
+      .sub {
+        font-size: 0.75rem;
+        opacity: 0.75;
+      }
     }
   }
-`;
+`);

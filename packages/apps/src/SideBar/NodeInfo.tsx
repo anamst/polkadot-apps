@@ -10,7 +10,7 @@ import { useApi } from '@polkadot/react-hooks';
 import { NodeName, NodeVersion } from '@polkadot/react-query';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkgJson = require('../../package.json');
+const pkgJson = require('../../package.json') as { version: string };
 
 const uiInfo = `apps v${pkgJson.version}`;
 
@@ -31,7 +31,7 @@ function NodeInfo ({ className }: Props): React.ReactElement<Props> {
   );
 }
 
-export default styled(NodeInfo)`
+export default React.memo(styled(NodeInfo)`
   background: transparent;
   color: white;
   font-size: 0.75rem;
@@ -41,12 +41,9 @@ export default styled(NodeInfo)`
 
   > div {
     margin-bottom: -0.125em;
+
     > div {
       display: inline-block;
     }
-
-    &.spacer {
-      margin-bottom: 0.5rem;
-    }
   }
-`;
+`);

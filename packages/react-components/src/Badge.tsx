@@ -2,65 +2,72 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
+import { IconName } from '@fortawesome/fontawesome-svg-core';
+
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
+import Icon from './Icon';
 import Tooltip from './Tooltip';
 
 interface Props {
   className?: string;
+  color: 'counter' | 'green' | 'blue' | 'gray' | 'normal' | 'purple' | 'red' | 'transparent';
   hover?: React.ReactNode;
-  info: React.ReactNode;
-  isInline?: boolean;
+  icon?: IconName;
+  info?: React.ReactNode;
   isSmall?: boolean;
-  isTooltip?: boolean;
   onClick?: () => void;
-  type: 'counter' | 'online' | 'offline' | 'next' | 'runnerup' | 'selected' | 'green' | 'blue' | 'brown' | 'gray';
 }
 
 let badgeId = 0;
 
-function Badge ({ className, hover, info, isInline, isSmall, isTooltip, onClick, type }: Props): React.ReactElement<Props> | null {
-  const [key] = useState(`${Date.now()}-${badgeId++}`);
+function Badge ({ className = '', color = 'normal', hover, icon, info, isSmall, onClick }: Props): React.ReactElement<Props> | null {
+  const [trigger] = useState(`badge-hover-${Date.now()}-${badgeId++}`);
+  const extraProps = hover
+    ? { 'data-for': trigger, 'data-tip': true }
+    : {};
 
   return (
     <div
-      className={`ui--Badge ${isInline && 'isInline'} ${isTooltip && 'isTooltip'} ${isSmall && 'isSmall'} ${onClick && 'isClickable'} ${type} ${className}`}
-      data-for={`badge-status-${key}`}
-      data-tip={true}
-      data-tip-disable={!isTooltip}
+      {...extraProps}
+      className={`ui--Badge${hover ? ' isTooltip' : ''}${isSmall ? ' isSmall' : ''}${onClick ? ' isClickable' : ''} ${color}Color ${className}`}
       onClick={onClick}
     >
-      <div className='badge'>
-        {info}
-      </div>
-      <div className='detail'>
-        {hover}
-      </div>
+      {info || (icon && <Icon icon={icon} />)}
       {hover && (
         <Tooltip
-          trigger={`badge-status-${key}`}
           text={hover}
+          trigger={trigger}
         />
       )}
     </div>
   );
 }
 
-export default styled(Badge)`
+export default React.memo(styled(Badge)`
   border-radius: 16px;
-  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.2);
   color: #eee;
-  cursor: help;
+  display: inline-block;
   font-size: 12px;
   height: 22px;
+  line-height: 22px;
+  margin-right: 0.25rem;
+  min-width: 22px;
   padding: 0 4px;
+  overflow: hidden;
   text-align: center;
+  vertical-align: middle;
   width: 22px;
 
-  i.icon {
-    cursor: inherit !important;
-    margin: 0;
+  &.isTooltip {
+    cursor: help;
+  }
+
+  .ui--Icon {
+    cursor: inherit;
+    margin-top: 5px;
+    vertical-align: top;
     width: 1em;
   }
 
@@ -69,79 +76,47 @@ export default styled(Badge)`
   }
 
   &.isSmall {
-    box-shadow: none;
     font-size: 10px;
     height: 16px;
     line-height: 16px;
+    min-width: 16px;
     padding: 0;
     width: 16px;
+
+    .ui--Icon {
+      margin-top: 3px;
+    }
   }
 
-  &:not(.isInline) {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.25rem;
-  }
-
-  &.isInline {
-    display: inline-block;
-    margin-right: 0.25rem;
-  }
-
-  &.next,
-  &.blue {
+  &.blueColor {
     background: steelblue;
   }
 
-  &.offline,
-  &.counter {
+  &.counterColor {
     background: red;
-  }
-
-  &.counter {
     margin: 0 0.5rem;
     vertical-align: middle;
   }
 
-  &.gray {
-    background: #eee;
+  &.grayColor {
+    background: #eee !important;
     color: #aaa;
   }
 
-  &.runnerup,
-  &.brown {
-    background: brown;
+  &.redColor {
+    background: darkred;
   }
 
-  &.online,
-  &.selected,
-  &.green {
+  &.greenColor {
     background: green;
   }
 
-  & > * {
-    line-height: 22px;
-    overflow: hidden;
+  &.purpleColor {
+    background: indigo;
   }
 
-  &.isSmall > * {
-    line-height: 16px;
+  &.transparentColor {
+    background: transparent;
+    box-shadow: none;
   }
-
-  .detail {
-    height: 0;
-    width: 0;
-  }
-
-  &.expand {
-    width: 300px;
-
-    .badge {
-      width: 0;
-    }
-
-    .detail {
-      width: auto;
-    }
-  }
-`;
+`);

@@ -5,103 +5,46 @@
 import { css } from 'styled-components';
 
 /* default buttons, dark gray */
-const colorBtnDefault = '#666';
+export const colorBtnDefault = '#767778';
+
+export const colorBtnShadow = '#98999a';
 
 /* highlighted buttons, orange */
-const colorBtnHighlight = '#f19135';
+export const colorBtnHighlight = '#f19135';
 
 /* primary buttons, blue */
-const colorBtnPrimary = '#2e86ab';
+export const colorBtnPrimary = colorBtnDefault; // '#2e86ab';
 
 /* button text color */
-const colorBtnText = '#f9f9f9';
+export const colorBtnText = '#f9f8f7';
+
+export const colorLink = '#2e86ab';
 
 export default css`
   .theme--default {
     a {
-      color: ${colorBtnPrimary};
+      color: ${colorLink};
 
       &:hover,
       a:visited {
-        color: ${colorBtnPrimary};
+        color: ${colorLink};
       }
     }
 
-    .ui.button,
-    .ui.buttons .button {
-      background-color: ${colorBtnDefault};
-      color: ${colorBtnText};
-
-      &.active,
-      &:active,
-      &:focus,
-      &:hover {
-        background-color: ${colorBtnDefault};
-        color: ${colorBtnText};
+    .ui--Button {
+      &:hover:not(.isDisabled) {
+        filter: brightness(110%);
       }
 
-      &:hover {
-        opacity: 0.8;
+      &.isIcon:not(.isDisabled) {
+        .ui--Icon {
+          color: ${colorLink};
+        }
       }
-    }
-
-    .ui.basic.negative.button {
-      box-shadow: 0 0 0 1px ${colorBtnHighlight} inset !important;
-      color: ${colorBtnHighlight} !important;
-    }
-
-    .ui.negative.button,
-    .ui.buttons .negative.button {
-      background-color: ${colorBtnHighlight};
-
-      &.active,
-      &:active,
-      &:focus,
-      &:hover {
-        background-color: ${colorBtnHighlight};
-      }
-    }
-
-    .ui.primary.button,
-    .ui.buttons .primary.button
-    /*, .ui.primary.buttons .button (for dropdowns) */ {
-      background-color: ${colorBtnPrimary};
-
-      &.active,
-      &:active,
-      &:focus,
-      &:hover {
-        background-color: ${colorBtnPrimary};
-      }
-    }
-
-    .ui.blue.progress .bar {
-      background-color: ${colorBtnHighlight};
     }
 
     .ui.modal > .header:not(.ui) {
-      border-bottom-color: ${colorBtnHighlight};
-    }
-
-    .ui.menu.tabular .item.active {
-      border-bottom-color: ${colorBtnHighlight};
-    }
-
-    /* this is for dropdown buttons */
-    .ui.buttons .ui.button.selection.visible.dropdown {
-      &:hover {
-        /* reset opacity, this is now open */
-        opacity: 1;
-      }
-
-      > .text:not(.default) {
-        color: ${colorBtnText};
-      }
-    }
-
-    .ui.toggle.checkbox input:checked~.box:before,
-    .ui.toggle.checkbox input:checked~label:before {
-      background-color: ${colorBtnHighlight} !important;
+      border-bottom-color: ${colorBtnDefault};
     }
   }
 `;

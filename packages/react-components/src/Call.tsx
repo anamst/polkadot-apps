@@ -4,7 +4,6 @@
 
 import { Hash } from '@polkadot/types/interfaces';
 import { Codec, IExtrinsic, IMethod, TypeDef } from '@polkadot/types/types';
-import { BareProps, I18nProps } from './types';
 
 import BN from 'bn.js';
 import React, { useEffect, useState } from 'react';
@@ -15,14 +14,16 @@ import { FormatBalance } from '@polkadot/react-query';
 
 import Static from './Static';
 import { classes } from './util';
-import translate from './translate';
+import { useTranslation } from './translate';
 
-export interface Props extends I18nProps, BareProps {
+export interface Props {
   children?: React.ReactNode;
+  className?: string;
   labelHash?: React.ReactNode;
   mortality?: string;
   onError?: () => void;
   value: IExtrinsic | IMethod;
+  withBorder?: boolean;
   withHash?: boolean;
   tip?: BN;
 }
@@ -37,8 +38,15 @@ interface Value {
   value: Codec;
 }
 
-function Call ({ children, className, labelHash, mortality, onError, style, tip, value, withHash, t }: Props): React.ReactElement<Props> {
-  const [{ hash, params, values }, setExtracted] = useState<{ hash: Hash | null; params: Param[]; values: Value[] }>({ hash: null, params: [], values: [] });
+interface Extracted {
+  hash: Hash | null;
+  params: Param[];
+  values: Value[];
+}
+
+function Call ({ children, className = '', labelHash, mortality, onError, tip, value, withBorder, withHash }: Props): React.ReactElement<Props> {
+  const { t } = useTranslation();
+  const [{ hash, params, values }, setExtracted] = useState<Extracted>({ hash: null, params: [], values: [] });
 
   useEffect((): void => {
     const params = GenericCall.filterOrigin(value.meta).map(({ name, type }): Param => ({
@@ -57,22 +65,20 @@ function Call ({ children, className, labelHash, mortality, onError, style, tip,
   }, [value, withHash]);
 
   return (
-    <div
-      className={classes('ui--Extrinsic', className)}
-      style={style}
-    >
+    <div className={classes('ui--Extrinsic', className)}>
       <Params
         isDisabled
         onError={onError}
         params={params}
         values={values}
+        withBorder={withBorder}
       />
       {children}
       <div className='ui--Extrinsic--toplevel'>
         {hash && (
           <Static
             className='hash'
-            label={labelHash || t('extrinsic hash')}
+            label={labelHash || t<string>('extrinsic hash')}
           >
             {hash.toHex()}
           </Static>
@@ -80,7 +86,7 @@ function Call ({ children, className, labelHash, mortality, onError, style, tip,
         {mortality && (
           <Static
             className='mortality'
-            label={t('lifetime')}
+            label={t<string>('lifetime')}
           >
             {mortality}
           </Static>
@@ -88,7 +94,7 @@ function Call ({ children, className, labelHash, mortality, onError, style, tip,
         {tip?.gtn(0) && (
           <Static
             className='tip'
-            label={t('tip')}
+            label={t<string>('tip')}
           >
             <FormatBalance value={tip} />
           </Static>
@@ -98,25 +104,23 @@ function Call ({ children, className, labelHash, mortality, onError, style, tip,
   );
 }
 
-export default translate(
-  styled(Call)`
-    .hash .ui--Static {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      word-break: unset;
-      word-wrap: unset;
-    }
+export default React.memo(styled(Call)`
+  .hash .ui--Static {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: unset;
+    word-wrap: unset;
+  }
 
-    .ui--Extrinsic--toplevel {
-      margin-top: 0.75rem;
+  .ui--Extrinsic--toplevel {
+    margin-top: 0.75rem;
 
-      .ui--Labelled {
-        padding-left: 0;
+    .ui--Labelled {
+      padding-left: 0;
 
-        label {
-          left: 1.55rem;
-        }
+      label {
+        left: 1.55rem;
       }
     }
-  `
-);
+  }
+`);
