@@ -4,7 +4,6 @@
 
 import { createGlobalStyle } from 'styled-components';
 
-import media from '../media';
 import cssComponents from './components';
 import cssForm from './form';
 import cssMedia from './media';
@@ -12,7 +11,136 @@ import cssRx from './rx';
 import cssSemantic from './semantic';
 import cssTheme from './theme';
 
-export default createGlobalStyle`
+interface Props {
+  uiHighlight?: string;
+}
+
+const defaultHighlight = '#f19135'; // #999
+
+const getHighlight = (props: Props): string =>
+  (props.uiHighlight || defaultHighlight);
+
+export default createGlobalStyle<Props>`
+  .ui--highlight--all {
+    background: ${getHighlight} !important;
+    border-color: ${getHighlight} !important;
+    color: ${getHighlight} !important;
+  }
+
+  .ui--highlight--before:before {
+    background: ${getHighlight} !important;
+  }
+
+  .ui--highlight--bg {
+    background: ${getHighlight} !important;
+  }
+
+  .ui--highlight--border {
+    border-color: ${getHighlight} !important;
+  }
+
+  .ui--highlight--color {
+    color: ${getHighlight} !important;
+  }
+
+  .ui--highlight--fill {
+    fill: ${getHighlight} !important;
+  }
+
+  .ui--highlight--gradient {
+    background: ${(props: Props) => `linear-gradient(90deg, ${props.uiHighlight || defaultHighlight}, transparent)`};
+  }
+
+  .ui--highlight--icon {
+    .ui--Icon {
+      color: ${getHighlight} !important;
+    }
+  }
+
+  .ui--highlight--shadow {
+    box-shadow: 0 0 1px ${getHighlight} !important;
+  }
+
+  .ui--highlight--stroke {
+    stroke: ${getHighlight} !important;
+  }
+
+  .ui--Button {
+    &:not(.isDisabled):not(.isIcon):not(.isBasic) {
+      .ui--Icon {
+        background: ${getHighlight};
+        color: #f5f5f4;
+      }
+    }
+
+    &.isBasic:not(.isDisabled):not(.isIcon):not(.isSelected) {
+      &:not(.isReadOnly) {
+        box-shadow: 0 0 1px ${getHighlight};
+      }
+
+      .ui--Icon {
+        color: ${getHighlight};
+      }
+    }
+
+    &.isSelected {
+      box-shadow: 0 0 1px ${getHighlight};
+    }
+
+    &:hover:not(.isDisabled):not(.isReadOnly),
+    &.isSelected {
+      background: ${getHighlight};
+      color: #f5f5f4;
+      text-shadow: none;
+
+      &:not(.isIcon) {
+        .ui--Icon {
+          color: inherit;
+        }
+      }
+    }
+  }
+
+  .ui--Table td .ui--Button {
+    &:not(.isDisabled):not(.isIcon) {
+      .ui--Icon {
+        background: transparent;
+        color: ${getHighlight};
+      }
+    }
+  }
+
+  .theme--default {
+    .ui--Tabs-Tab.tabLinkActive {
+      border-bottom-color: ${getHighlight};
+    }
+
+    .ui.negative.button,
+    .ui.buttons .negative.button {
+      background: #666 !important;
+    }
+
+    .ui.primary.button,
+    .ui.buttons .primary.button {
+      background: ${getHighlight};
+
+      &.active,
+      &:active,
+      &:focus,
+      &:hover {
+        background-color: ${getHighlight};
+      }
+    }
+
+    .ui--Toggle.isChecked .ui--Toggle-Slider {
+      background-color: ${getHighlight} !important;
+
+      &:before {
+        border-color: ${getHighlight} !important;
+      }
+    }
+  }
+
   #root {
     color: #4e4e4e;
     font-family: sans-serif;
@@ -33,28 +161,6 @@ export default createGlobalStyle`
     position: relative;
     text-align: left;
 
-    &:hover {
-      /* box-shadow: 0 4px 8px rgba(0,0,0,0.1); */
-      /* box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-      border-color: transparent; */
-    }
-
-    &:not(:hover) {
-      .ui.button:not(.disabled) {
-        background: #eee !important;
-        color: #555 !important;
-      }
-
-      .ui.toggle.checkbox input:checked~.box:before,
-      .ui.toggle.checkbox input:checked~label:before {
-        background-color: #eee !important;
-      }
-
-      .ui.button.mini {
-        visibility: hidden;
-      }
-    }
-
     > ul {
       margin: 0;
       padding: 0;
@@ -62,7 +168,13 @@ export default createGlobalStyle`
 
     &.error,
     &.warning {
+      font-size: 0.95rem;
       margin-left: 2.25rem;
+      padding: 0.75rem 1rem;
+    }
+
+    &.nomargin {
+      margin-left: 0;
     }
 
     &.error {
@@ -132,17 +244,13 @@ export default createGlobalStyle`
     }
   }
 
-  h3, h4, h5 {
+  h1, h2, h3, h4, h5 {
     margin-bottom: 0.25rem;
   }
 
   header {
-    margin-bottom: 1.4rem;
+    margin-bottom: 1.5rem;
     text-align: center;
-
-    ${media.TABLET`
-      margin-bottom: 2rem;
-   `}
 
     > article {
       background: transparent;

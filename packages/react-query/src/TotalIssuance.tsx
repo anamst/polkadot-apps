@@ -2,35 +2,30 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { BareProps } from '@polkadot/react-api/types';
-import { Balance } from '@polkadot/types/interfaces';
-
 import React from 'react';
 import { useApi, useCall } from '@polkadot/react-hooks';
-import { formatBalance } from '@polkadot/util';
+import FormatBalance from './FormatBalance';
 
-interface Props extends BareProps {
+interface Props {
   children?: React.ReactNode;
+  className?: string;
   label?: React.ReactNode;
 }
 
-export default function TotalIssuance ({ children, className, label, style }: Props): React.ReactElement<Props> {
+function TotalIssuance ({ children, className = '', label }: Props): React.ReactElement<Props> {
   const { api } = useApi();
-  const totalIssuance = useCall<string>(api.query.balances.totalIssuance, [], {
-    transform: (totalIssuance: Balance): string =>
-      totalIssuance?.toString()
-  });
+  const totalIssuance = useCall<string>(api.query.balances?.totalIssuance, []);
 
   return (
-    <div
-      className={className}
-      style={style}
-    >
-      {label || ''}{
-        totalIssuance
-          ? `${formatBalance(totalIssuance, false)}${formatBalance.calcSi(totalIssuance).value}`
-          : '-'
-      }{children}
+    <div className={className}>
+      {label || ''}
+      <FormatBalance
+        value={totalIssuance}
+        withSi
+      />
+      {children}
     </div>
   );
 }
+
+export default React.memo(TotalIssuance);
