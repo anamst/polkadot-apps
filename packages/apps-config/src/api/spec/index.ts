@@ -10,7 +10,6 @@ import encointerNodeTeeproxy from './encointer-node-teeproxy';
 import kulupu from './kulupu';
 import nodeTemplate from './node-template';
 import stablePoc from './stable-poc';
-import kilt from './kilt-chain';
 
 export default {
   acala,
@@ -20,7 +19,6 @@ export default {
   'encointer-node-notee': encointerNodeNotee,
   'encointer-node-teeproxy': encointerNodeTeeproxy,
   kulupu,
-  'mashnet-node': kilt,
   'node-template': nodeTemplate,
   'stable-poc': stablePoc,
   stable_poc: stablePoc

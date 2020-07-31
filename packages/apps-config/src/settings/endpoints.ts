@@ -77,11 +77,6 @@ function createLive (t: TFunction): LinkOption[] {
       info: 'substrate',
       text: t<string>('rpc.kulupu', 'Kulupu (Kulupu Mainnet, hosted by Kulupu)', { ns: 'apps-config' }),
       value: 'wss://rpc.kulupu.network/ws'
-    },
-    {
-      info: 'KILT Mashnet',
-      text: t<string>('rpc.kilt', 'KILT Chain (KILT Canary, hosted by KILT protocol)', { ns: 'apps-config' }),
-      value: 'wss://full-nodes.kilt.io:9944/'
     }
   ];
 }
@@ -112,12 +107,13 @@ function createTest (t: TFunction): LinkOption[] {
     {
       info: 'nodle',
       text: t<string>('rpc.arcadia', 'Arcadia (Nodle Testnet, hosted by Nodle)', { ns: 'apps-config' }),
-      value: 'wss://arcadia1.nodleprotocol.io/'
+      value: 'wss://arcadia1.nodleprotocol.io'
     },
     {
-      info: 'KILT Mashnet (dev)',
-      text: t<string>('rpc.kilt', 'KILT Chain (Development Net, hosted by KILT protocol)', { ns: 'apps-config' }),
-      value: 'wss://full-nodes.dev.kilt.io:9944/'
+      info: 'datahighway',
+      isDisabled: true,
+      text: t<string>('rpc.datahighway.harbour', 'Harbour (DataHighway Testnet, hosted by MXC)', { ns: 'apps-config' }),
+      value: 'wss://testnet-harbour.datahighway.com'
     }
   ];
 }
