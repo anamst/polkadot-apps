@@ -110,6 +110,11 @@ function createTest (t: TFunction): LinkOption[] {
       value: 'wss://arcadia1.nodleprotocol.io'
     },
     {
+      info: 'kilt',
+      text: t<string>('rpc.kilt', 'Mashnet (KILT Testnet, hosted by KILT Protocol)', { ns: 'apps-config' }),
+      value: 'ws://full-nodes.devnet.kilt.io:9944'
+    },
+    {
       info: 'datahighway',
       isDisabled: true,
       text: t<string>('rpc.datahighway.harbour', 'Harbour (DataHighway Testnet, hosted by MXC)', { ns: 'apps-config' }),
