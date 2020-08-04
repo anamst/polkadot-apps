@@ -11,6 +11,7 @@ import encointerNodeTeeproxy from './encointer-node-teeproxy';
 import kulupu from './kulupu';
 import nodeTemplate from './node-template';
 import stablePoc from './stable-poc';
+import nodePolimec from './polimec-node';
 
 export default {
   acala,
@@ -22,6 +23,7 @@ export default {
   'encointer-node-teeproxy': encointerNodeTeeproxy,
   kulupu,
   'node-template': nodeTemplate,
+  'polimec-node': nodePolimec,
   'stable-poc': stablePoc,
   stable_poc: stablePoc
 };
