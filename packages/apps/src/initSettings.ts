@@ -39,7 +39,7 @@ function getApiUrl (): string {
   const fallbackUrl = endpoints.find(({ info }) => info === 'kilt');
 
   // via settings, or the default chain
-  return [stored.apiUrl, process.env.WS_URL].includes('kilt')
+  return [stored.apiUrl, process.env.WS_URL].includes(settings.apiUrl)
     ? settings.apiUrl // keep as-is
     : fallbackUrl
       ? fallbackUrl.value as string // grab the fallback
