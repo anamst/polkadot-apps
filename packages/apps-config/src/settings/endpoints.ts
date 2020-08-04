@@ -34,7 +34,7 @@ function createLive (t: TFunction): LinkOption[] {
     {
       info: 'kilt',
       text: t<string>('rpc.kilt', 'Mashnet (KILT Canary, hosted by KILT Protocol)', { ns: 'apps-config' }),
-      value: 'wss://full-nodes-lb.kilt.io:9944/'
+      value: 'wss://full-nodes.kilt.io:9944/'
     },
     {
       dnslink: 'polkadot',
