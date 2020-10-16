@@ -5,6 +5,7 @@
 // structs need to be in order
 /* eslint-disable sort-keys */
 
+// eslint-disable-next-line header/header
 export default {
   Address: 'AccountId',
   Index: 'u32',
@@ -17,5 +18,6 @@ export default {
   Balance: 'u128',
   BalanceOf: 'u128',
   CurrencyId: 'u32',
+  // CurrencyId: 'Vec<u8>',
   CurrencyIdOf: 'u32'
 };
