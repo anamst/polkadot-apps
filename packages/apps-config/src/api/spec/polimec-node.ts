@@ -12,12 +12,16 @@ export default {
   LookupSource: 'AccountId',
   BlockNumber: 'u32',
   Signature: 'MultiSignature',
+  AccountIndex: 'u32',
+  Hash: 'H256',
 
   Amount: 'i128',
   AmountOf: 'i128',
   Balance: 'u128',
   BalanceOf: 'u128',
-  CurrencyId: 'u32',
-  // CurrencyId: 'Vec<u8>',
-  CurrencyIdOf: 'u32'
+  CurrencyId: '[u8; 8]',
+  CurrencyIdOf: 'CurrencyId',
+  RefCount: 'u32',
+  XCurrencyId: 'CurrencyId',
+  ParaId: 'u32'
 };
