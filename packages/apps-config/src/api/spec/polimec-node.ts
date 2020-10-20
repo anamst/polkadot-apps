@@ -35,7 +35,7 @@ export default {
   },
   XCurrencyId: {
     chain_id: 'ChainId',
-    currency_id: 'CurrencyId'
+    currency_id: 'String'
   },
   XCMPTokenMessage: {
     _enum: {
