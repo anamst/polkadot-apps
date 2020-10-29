@@ -9,7 +9,7 @@
 export default {
   Address: 'AccountId',
   Index: 'u32',
-  LookupSource: 'AccountId',
+  LookupSource: 'Address',
   BlockNumber: 'u32',
   Signature: 'MultiSignature',
   AccountIndex: 'u32',
@@ -19,27 +19,33 @@ export default {
   AmountOf: 'i128',
   Balance: 'u128',
   BalanceOf: 'u128',
-  // neither Vec<8u> nor Bytes nor String works
+
   CurrencyId: '[u8; 8]',
-  CurrencyIdOf: 'CurrencyId',
-  ParaId: 'u32',
-  RelayChainBlockNumber: 'BlockNumber',
+  CurrencyIdOf: '[u8; 8]',
+
+  CouncilMember: {
+    points: 'u32',
+    currency_id: 'CurrencyIdOf',
+    account_id: 'AccountId',
+    validator_id: 'ValidatorId'
+  },
+
+  CouncilMemberApplicant: {
+    council_member: 'CouncilMember',
+    total_issuance: 'BalanceOf'
+  },
+
+  Ballot: {
+    yes_votes: 'BalanceOf',
+    no_votes: 'BalanceOf'
+  },
+
+  CouncilVote: {
+    vote: 'bool',
+    applicant: 'AccountId',
+    votes: 'BTreeMap<CurrencyIdOf<T>, Ballot<T>>'
+  },
+
   // required in 2.0.0
-  RefCount: 'u32',
-  // types for orml_xtokens
-  ChainId: {
-    _enum: {
-      RelayChain: 'Null',
-      ParaChain: 'ParaId'
-    }
-  },
-  XCurrencyId: {
-    chain_id: 'ChainId',
-    currency_id: 'String'
-  },
-  XCMPTokenMessage: {
-    _enum: {
-      Transfer: '(XCurrencyId, ParaId, AccountId, Balance)'
-    }
-  }
+  RefCount: 'u32'
 };
