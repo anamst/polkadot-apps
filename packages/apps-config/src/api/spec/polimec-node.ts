@@ -15,13 +15,26 @@ export default {
   AccountIndex: 'u32',
   Hash: 'H256',
 
+  Keys: 'SessionKeys2',
   Amount: 'i128',
   AmountOf: 'i128',
   Balance: 'u128',
-  BalanceOf: 'u128',
+  BalanceOf: 'Balance',
 
   CurrencyId: '[u8; 8]',
-  CurrencyIdOf: '[u8; 8]',
+  CurrencyIdOf: 'CurrencyId',
+
+  SessionStatus: {
+    _enum: [
+      'Outdated',
+      'UpToDate'
+    ]
+  },
+
+  UserVote: {
+    amount: 'BalanceOf',
+    approve: 'Option<bool>'
+  },
 
   CouncilMember: {
     points: 'u32',
