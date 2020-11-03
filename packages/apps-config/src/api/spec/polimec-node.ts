@@ -17,18 +17,20 @@ export default {
 
   Keys: 'SessionKeys2',
   Amount: 'i128',
-  AmountOf: 'i128',
+  AmountOf: 'Amount',
   Balance: 'u128',
   BalanceOf: 'Balance',
 
   CurrencyId: '[u8; 8]',
   CurrencyIdOf: 'CurrencyId',
 
+  ValidatorId: 'AccountId',
+
   SessionStatus: {
-    _enum: [
-      'Outdated',
-      'UpToDate'
-    ]
+    _enum: {
+      Outdated: null,
+      UpToDate: null
+    }
   },
 
   UserVote: {
@@ -38,9 +40,9 @@ export default {
 
   CouncilMember: {
     points: 'u32',
-    currency_id: 'CurrencyIdOf',
+    currency_id: 'CurrencyId',
     account_id: 'AccountId',
-    validator_id: 'ValidatorId'
+    validator_id: 'AccountId'
   },
 
   CouncilMemberApplicant: {
@@ -56,7 +58,7 @@ export default {
   CouncilVote: {
     vote: 'bool',
     applicant: 'AccountId',
-    votes: 'BTreeMap<CurrencyIdOf<T>, Ballot<T>>'
+    votes: 'BTreeMap<CurrencyIdOf, Ballot>'
   },
 
   // required in 2.0.0
